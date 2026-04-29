@@ -41,7 +41,8 @@ def create_job(job: JobCreate):
 def search_jobs(
     district: str | None = None,
     skill: str | None = None,
-    status: str = "open"
+    status: str = "open",
+    worker_nic: str | None = None
 ):
     with get_db() as db:
         query = "SELECT * FROM jobs WHERE status = ?"
@@ -58,7 +59,14 @@ def search_jobs(
             params.append(skill)
             
         jobs = db.execute(query, params).fetchall()
-        return [dict(j) for j in jobs]
+        jobs_list = [dict(j) for j in jobs]
+        
+        if worker_nic:
+            for j in jobs_list:
+                app = db.execute("SELECT id FROM applications WHERE job_id = ? AND worker_nic = ?", (j["id"], worker_nic)).fetchone()
+                j["applied"] = bool(app)
+                
+        return jobs_list
 
 @router.get("/suitable")
 def get_suitable_jobs(user_nic: str = Query(...)):
@@ -91,7 +99,25 @@ def get_suitable_jobs(user_nic: str = Query(...)):
         """
         params = skill_codes + [user["district"]] + skill_codes
         jobs = db.execute(query, params).fetchall()
-        return [dict(j) for j in jobs]
+        jobs_list = [dict(j) for j in jobs]
+        
+        for j in jobs_list:
+            app = db.execute("SELECT id FROM applications WHERE job_id = ? AND worker_nic = ?", (j["id"], user_nic)).fetchone()
+            j["applied"] = bool(app)
+            
+        return jobs_list
+
+@router.get("/{job_id}/applications")
+def get_job_applications(job_id: int):
+    with get_db() as db:
+        apps = db.execute("""
+            SELECT a.status, u.nic as worker_nic, u.first_name, u.last_name, u.phone 
+            FROM applications a
+            JOIN users u ON a.worker_nic = u.nic
+            WHERE a.job_id = ?
+        """, (job_id,)).fetchall()
+        return [dict(a) for a in apps]
+
 
 
 @router.get("/{job_id}")

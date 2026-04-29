@@ -12,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 
 from database import init_db
-from routes import auth, users, jobs, integration, legacy, admin, frontend
+from routes import auth, users, jobs, integration, legacy, admin, frontend, community
 
 app = FastAPI(title="Informal Workers API | Premium Optimized")
 
@@ -42,6 +42,7 @@ app.include_router(jobs.router)
 app.include_router(integration.router)
 app.include_router(legacy.router)
 app.include_router(admin.router)
+app.include_router(community.router)
 
 _logger = logging.getLogger("keepalive")
 _self_ping_started = False

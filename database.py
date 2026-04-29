@@ -141,6 +141,19 @@ def init_db() -> None:
         """
     )
 
+    # Community Messages table
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS community_messages(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            group_id TEXT NOT NULL,
+            sender_nic TEXT NOT NULL,
+            message TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+        )
+        """
+    )
+
     # Likes (optional): employer can like/bookmark workers per job
     cursor.execute(
         """
