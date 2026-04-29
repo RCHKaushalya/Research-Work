@@ -1,1 +1,1 @@
-from . import auth, users, jobs, integration, legacy, admin
+from . import auth, users, jobs, integration, legacy, admin, frontend

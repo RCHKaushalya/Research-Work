@@ -28,7 +28,7 @@ async def login_page(request: Request):
     user = get_current_user(request)
     if user:
         return RedirectResponse(url="/dashboard")
-    return templates.TemplateResponse("login.html", {"request": request, "show_header": False})
+    return templates.TemplateResponse(request=request, name="login.html", context={"show_header": False})
 
 @router.post("/login")
 async def login(request: Request, nic: str = Form(...), pin: str = Form(...)):
@@ -43,16 +43,14 @@ async def login(request: Request, nic: str = Form(...), pin: str = Form(...)):
         ).fetchone()
         
         if not user:
-            return templates.TemplateResponse("login.html", {
-                "request": request, 
+            return templates.TemplateResponse(request=request, name="login.html", context={
                 "error": "Invalid NIC or PIN",
                 "show_header": False
             })
         
         user_dict = dict(user)
         if user_dict['role'] not in ['admin', 'volunteer']:
-             return templates.TemplateResponse("login.html", {
-                "request": request, 
+             return templates.TemplateResponse(request=request, name="login.html", context={
                 "error": "Access denied. Admins and Volunteers only.",
                 "show_header": False
             })
@@ -91,8 +89,7 @@ async def dashboard(request: Request):
         users_list = db.execute("SELECT nic, first_name, last_name, role, district FROM users LIMIT 10").fetchall()
         jobs_list = db.execute("SELECT title, district, status FROM jobs LIMIT 10").fetchall()
         
-        return templates.TemplateResponse("dashboard.html", {
-            "request": request,
+        return templates.TemplateResponse(request=request, name="dashboard.html", context={
             "user": user,
             "stats": stats,
             "users": [dict(u) for u in users_list],
