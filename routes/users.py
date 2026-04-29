@@ -34,7 +34,22 @@ def get_full_profile(nic: str):
             (nic,),
         ).fetchone()
         posted = db.execute("SELECT COUNT(*) as count FROM jobs WHERE employer_nic = ?", (nic,)).fetchone()
-        user_dict["stats"] = {"completed_jobs": completed["count"], "posted_jobs": posted["count"]}
+        abandoned = db.execute(
+            "SELECT COUNT(*) as count FROM applications WHERE worker_nic = ? AND status = 'abandoned'",
+            (nic,),
+        ).fetchone()
+        removed = db.execute(
+            """SELECT COUNT(*) as count FROM applications A
+               JOIN jobs J ON A.job_id = J.id
+               WHERE A.worker_nic = ? AND J.status = 'removed'""",
+            (nic,),
+        ).fetchone()
+        user_dict["stats"] = {
+            "completed_jobs": completed["count"],
+            "posted_jobs": posted["count"],
+            "abandoned_jobs": abandoned["count"],
+            "removed_jobs": removed["count"],
+        }
 
         # Reviews
         reviews = db.execute("SELECT * FROM reviews WHERE worker_nic = ?", (nic,)).fetchall()
