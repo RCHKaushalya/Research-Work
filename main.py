@@ -6,13 +6,18 @@ import threading
 import time
 import urllib.request
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 
 from database import init_db
-from routes import auth, users, jobs, integration, legacy, admin
+from routes import auth, users, jobs, integration, legacy, admin, frontend
 
 app = FastAPI(title="Informal Workers API | Premium Optimized")
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.add_middleware(
     CORSMiddleware,
@@ -22,9 +27,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from fastapi import Request
-from fastapi.responses import JSONResponse
-
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     return JSONResponse(
@@ -33,6 +35,7 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 # Register Modular Routers
+app.include_router(frontend.router)
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(jobs.router)

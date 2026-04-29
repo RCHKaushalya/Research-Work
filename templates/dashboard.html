@@ -1,0 +1,146 @@
+{% extends "layout.html" %}
+
+{% block title %}Dashboard | Workforce Platform{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid">
+    <aside class="sidebar">
+        <nav>
+            <ul class="nav-list">
+                <li>
+                    <a href="#" class="nav-link active">
+                        <i data-lucide="layout-dashboard"></i>
+                        Platform Activity
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link">
+                        <i data-lucide="users"></i>
+                        Worker Registry
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link">
+                        <i data-lucide="briefcase"></i>
+                        Job Command
+                    </a>
+                </li>
+                {% if user.role == 'admin' %}
+                <li>
+                    <a href="#" class="nav-link">
+                        <i data-lucide="zap"></i>
+                        Skill Registry
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link">
+                        <i data-lucide="settings"></i>
+                        System Prefs
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </aside>
+
+    <div class="main-content">
+        <header style="margin-bottom: 2.5rem;">
+            <h2 style="font-size: 2.25rem; font-weight: 900; letter-spacing: -0.05em;">
+                {% if user.role == 'admin' %}Strategic Command{% else %}Manager Dashboard{% endif %}
+            </h2>
+            <p class="user-meta" style="margin-top: 0.5rem; color: var(--text-muted)">Platform Status: <span style="color: var(--accent)">●</span> Verified & Syncing</p>
+        </header>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: #eef2ff; color: #6366f1;">
+                    <i data-lucide="users" class="w-5 h-5"></i>
+                </div>
+                <p class="stat-label">Total Workers</p>
+                <h4 class="stat-value">{{ stats.total_users }}</h4>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: #ecfdf5; color: #10b981;">
+                    <i data-lucide="briefcase" class="w-5 h-5"></i>
+                </div>
+                <p class="stat-label">Active Jobs</p>
+                <h4 class="stat-value">{{ stats.total_jobs }}</h4>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: #fffbeb; color: #f59e0b;">
+                    <i data-lucide="trending-up" class="w-5 h-5"></i>
+                </div>
+                <p class="stat-label">Total Apps</p>
+                <h4 class="stat-value">{{ stats.total_applications }}</h4>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: #f5f3ff; color: #8b5cf6;">
+                    <i data-lucide="shield-check" class="w-5 h-5"></i>
+                </div>
+                <p class="stat-label">Volunteers</p>
+                <h4 class="stat-value">{{ stats.total_volunteers }}</h4>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2.5rem;">
+            <!-- Workers -->
+            <section class="section-card">
+                <div class="section-header">
+                    <h3 class="section-title">Worker Registry</h3>
+                    <i data-lucide="search" style="color: var(--text-muted)"></i>
+                </div>
+                <div class="data-list">
+                    {% for worker in users %}
+                    <div class="data-item">
+                        <div class="user-info">
+                            <div class="user-avatar">
+                                {{ worker.first_name[0] }}{{ worker.last_name[0] }}
+                            </div>
+                            <div>
+                                <p class="user-name">{{ worker.first_name }} {{ worker.last_name }}</p>
+                                <p class="user-meta">{{ worker.nic }} • {{ worker.district }}</p>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <span class="badge {% if worker.role == 'volunteer' %}badge-primary{% else %}badge-success{% endif %}">
+                                {{ worker.role }}
+                            </span>
+                            <button class="btn" style="padding: 0.5rem; background: #fff; border: 1px solid var(--border)">
+                                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <!-- Jobs -->
+            <section class="section-card">
+                <div class="section-header">
+                    <h3 class="section-title">Job Command</h3>
+                    <i data-lucide="plus" style="color: var(--text-muted)"></i>
+                </div>
+                <div class="data-list">
+                    {% for job in jobs %}
+                    <div class="data-item">
+                        <div>
+                            <p class="user-name">{{ job.title }}</p>
+                            <p class="user-meta">{{ job.district }} • {{ job.status }}</p>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn" style="padding: 0.5rem; background: #fff; border: 1px solid var(--border)">
+                                <i data-lucide="search" class="w-4 h-4"></i>
+                            </button>
+                            <button class="btn" style="padding: 0.5rem; background: #fff1f2; color: #e11d48; border: 1px solid #fecaca">
+                                <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+{% endblock %}

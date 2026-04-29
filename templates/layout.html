@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Informal Workforce Platform{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    {% block head %}{% endblock %}
+</head>
+<body>
+    {% if show_header %}
+    <header class="header">
+        <a href="/" class="logo">Workforce<span>Platform</span></a>
+        <div class="user-nav">
+            {% if user %}
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <span class="user-meta" style="color: var(--text-main)">{{ user.first_name }} ({{ user.role }})</span>
+                <a href="/logout" class="btn" style="padding: 0.5rem 1rem; background: #f1f5f9; color: var(--text-main)">Logout</a>
+            </div>
+            {% endif %}
+        </div>
+    </header>
+    {% endif %}
+
+    <main class="{% block main_class %}container{% endblock %}">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script>
+        lucide.createIcons();
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

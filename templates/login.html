@@ -1,0 +1,37 @@
+{% extends "layout.html" %}
+
+{% block title %}Login | Workforce Platform{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <h1>Welcome Back</h1>
+            <p>Login to manage the workforce platform</p>
+        </div>
+        
+        {% if error %}
+        <div style="background: #fee2e2; color: #991b1b; padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; font-size: 0.875rem; font-weight: 600; border: 1px solid #fecaca;">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form action="/login" method="POST">
+            <div class="form-group">
+                <label class="form-label" for="nic">NIC Number</label>
+                <input class="form-input" type="text" id="nic" name="nic" placeholder="e.g. 199912345678" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="pin">Security PIN</label>
+                <input class="form-input" type="password" id="pin" name="pin" placeholder="••••" required>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                Login to Command Center
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block main_class %}{% endblock %}
