@@ -1,0 +1,20 @@
+# Python
+Backend/.venv/
+Backend/__pycache__/
+Backend/*.db
+Backend/uploads/
+
+# Flutter
+Users Mobile App/.dart_tool/
+Users Mobile App/.flutter-plugins
+Users Mobile App/.flutter-plugins-dependencies
+Users Mobile App/.packages
+Users Mobile App/build/
+Users Mobile App/ios/Flutter/Generated.xcconfig
+Users Mobile App/ios/Flutter/flutter_export_environment.sh
+Users Mobile App/android/app/src/main/res/drawable-*/
+Users Mobile App/android/app/src/main/res/mipmap-*/
+
+# OS
+.DS_Store
+Thumbs.db

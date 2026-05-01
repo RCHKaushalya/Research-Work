@@ -1,0 +1,156 @@
+{
+  "districts": [
+    { "id": "01", "name": "Colombo" },
+    { "id": "02", "name": "Gampaha" },
+    { "id": "03", "name": "Kalutara" },
+    { "id": "04", "name": "Kandy" },
+    { "id": "05", "name": "Matale" },
+    { "id": "06", "name": "Nuwara Eliya" },
+    { "id": "07", "name": "Galle" },
+    { "id": "08", "name": "Matara" },
+    { "id": "09", "name": "Hambantota" },
+    { "id": "10", "name": "Jaffna" },
+    { "id": "11", "name": "Kilinochchi" },
+    { "id": "12", "name": "Mannar" },
+    { "id": "13", "name": "Vavuniya" },
+    { "id": "14", "name": "Mullaitivu" },
+    { "id": "15", "name": "Batticaloa" },
+    { "id": "16", "name": "Ampara" },
+    { "id": "17", "name": "Trincomalee" },
+    { "id": "18", "name": "Kurunegala" },
+    { "id": "19", "name": "Puttalam" },
+    { "id": "20", "name": "Anuradhapura" },
+    { "id": "21", "name": "Polonnaruwa" },
+    { "id": "22", "name": "Badulla" },
+    { "id": "23", "name": "Monaragala" },
+    { "id": "24", "name": "Ratnapura" },
+    { "id": "25", "name": "Kegalle" }
+  ],
+  "dsAreas": {
+    "01": [
+      { "id": "01_01", "name": "Colombo" },
+      { "id": "01_02", "name": "Dehiwala" },
+      { "id": "01_03", "name": "Moratuwa" }
+    ],
+    "02": [
+      { "id": "02_01", "name": "Gampaha" },
+      { "id": "02_02", "name": "Negombo" },
+      { "id": "02_03", "name": "Katunayake" }
+    ],
+    "03": [
+      { "id": "03_01", "name": "Kalutara" },
+      { "id": "03_02", "name": "Panadura" },
+      { "id": "03_03", "name": "Matugama" }
+    ],
+    "04": [
+      { "id": "04_01", "name": "Kandy" },
+      { "id": "04_02", "name": "Gampola" },
+      { "id": "04_03", "name": "Nawalapitiya" }
+    ],
+    "05": [
+      { "id": "05_01", "name": "Matale" },
+      { "id": "05_02", "name": "Dambulla" },
+      { "id": "05_03", "name": "Naula" }
+    ],
+    "06": [
+      { "id": "06_01", "name": "Nuwara Eliya" },
+      { "id": "06_02", "name": "Kandy Road" },
+      { "id": "06_03", "name": "Ambewela" }
+    ],
+    "07": [
+      { "id": "07_01", "name": "Galle" },
+      { "id": "07_02", "name": "Matara" },
+      { "id": "07_03", "name": "Unawatuna" }
+    ],
+    "08": [
+      { "id": "08_01", "name": "Matara" },
+      { "id": "08_02", "name": "Weligama" },
+      { "id": "08_03", "name": "Mirissa" }
+    ],
+    "09": [
+      { "id": "09_01", "name": "Hambantota" },
+      { "id": "09_02", "name": "Tangalle" },
+      { "id": "09_03", "name": "Tissamaharama" }
+    ],
+    "10": [
+      { "id": "10_01", "name": "Jaffna" },
+      { "id": "10_02", "name": "Mullaitivu" },
+      { "id": "10_03", "name": "Chavakacheri" }
+    ],
+    "11": [
+      { "id": "11_01", "name": "Kilinochchi" },
+      { "id": "11_02", "name": "Kandavalai" },
+      { "id": "11_03", "name": "Mullaitivu" }
+    ],
+    "12": [
+      { "id": "12_01", "name": "Mannar" },
+      { "id": "12_02", "name": "Talaimannar" },
+      { "id": "12_03", "name": "Madhu Road" }
+    ],
+    "13": [
+      { "id": "13_01", "name": "Vavuniya" },
+      { "id": "13_02", "name": "Mullaitivu" },
+      { "id": "13_03", "name": "Medawachchiya" }
+    ],
+    "14": [
+      { "id": "14_01", "name": "Mullaitivu" },
+      { "id": "14_02", "name": "Akkaraipattu" },
+      { "id": "14_03", "name": "Vakarai" }
+    ],
+    "15": [
+      { "id": "15_01", "name": "Batticaloa" },
+      { "id": "15_02", "name": "Kalmunai" },
+      { "id": "15_03", "name": "Akkaraipattu" }
+    ],
+    "16": [
+      { "id": "16_01", "name": "Ampara" },
+      { "id": "16_02", "name": "Kalmunai" },
+      { "id": "16_03", "name": "Pottuvil" }
+    ],
+    "17": [
+      { "id": "17_01", "name": "Trincomalee" },
+      { "id": "17_02", "name": "Kinniya" },
+      { "id": "17_03", "name": "Kuchchaveli" }
+    ],
+    "18": [
+      { "id": "18_01", "name": "Kurunegala" },
+      { "id": "18_02", "name": "Puttalam" },
+      { "id": "18_03", "name": "Chilaw" }
+    ],
+    "19": [
+      { "id": "19_01", "name": "Puttalam" },
+      { "id": "19_02", "name": "Chilaw" },
+      { "id": "19_03", "name": "Mundal" }
+    ],
+    "20": [
+      { "id": "20_01", "name": "Anuradhapura" },
+      { "id": "20_02", "name": "Medawachchiya" },
+      { "id": "20_03", "name": "Nuwara Wewa" }
+    ],
+    "21": [
+      { "id": "21_01", "name": "Polonnaruwa" },
+      { "id": "21_02", "name": "Hingurakgoda" },
+      { "id": "21_03", "name": "Minneriya" }
+    ],
+    "22": [
+      { "id": "22_01", "name": "Badulla" },
+      { "id": "22_02", "name": "Haputale" },
+      { "id": "22_03", "name": "Welimada" }
+    ],
+    "23": [
+      { "id": "23_01", "name": "Monaragala" },
+      { "id": "23_02", "name": "Buttala" },
+      { "id": "23_03", "name": "Bibile" }
+    ],
+    "24": [
+      { "id": "24_01", "name": "Ratnapura" },
+      { "id": "24_02", "name": "Balangoda" },
+      { "id": "24_03", "name": "Eheliyagoda" }
+    ],
+    "25": [
+      { "id": "25_01", "name": "Kegalle" },
+      { "id": "25_02", "name": "Mawanella" },
+      { "id": "25_03", "name": "Warakapola" }
+    ]
+  }
+}

@@ -1,0 +1,111 @@
+Language: Dart
+Framework: Flutter
+
+The application is for Sri Lanka's informal workers.
+The app should support sinhala and tamil.
+
+Home page:
+    A iconic button to switch between user language.
+    A wellcome message.
+    A image.
+    Register button: navigate to register screen
+    Login button: navigate to login screen
+
+Register:
+    The registation flaw comes with multiple screens.
+    Third, fourth, fifth screens are optional.
+    After registation flaw user will redirect to user platform
+
+        first screen: Basic information
+            Fisrt name
+            Last name
+            NIC
+            Phone number
+            pin
+            
+            a link for login screen
+
+        Second screen: Location
+            District
+            Divitional secratarial area
+            (After selecting the distric only then the corresponding ds areas visible)
+            (District and ds areas are  selected via drop down or any interacting way.)
+
+        Third screen: Job category
+            Job category(Can be multiple)
+        
+        Fourth screen: skills
+            skills(based on the job categories the user select- can be multiple)
+
+        fifth screen: profile photo
+            a image of the worker
+
+Login screen:
+    A image
+    nic input feald
+    pin input feild
+    login button
+    and link for register screen
+
+User Platform:
+    The user platform is a tab layout area
+
+    Dashboard tab:
+        A language switch button(On top right)
+        A wellcome message
+        The sutable job section where user can apply
+        A button for post job(bottom right sticky)
+    
+    Job tab:
+        Stat of worker, number of completed jobs, removed or canseled job, posted job, applied jobs.
+        A list of posted jobs
+        A list of jobs can be applied
+    
+    A job:
+        poster can view applied workers
+        can message with workers
+        assigne workers
+        remove workers
+        job management functions
+        give reveiw for workers
+    
+    message tab:
+        A users get a communities, for job categories he or she has
+        In communities they can message like in a group
+        Chats of connected users.
+    
+    Profile tab:
+        A users public Profile
+        the rank, reviews
+        area,
+        skills
+    
+    Setting tab:
+        A buttons for edit basic info, update skills, change pin, sign out
+        The list of users who send connecting requests.
+
+    Search tab:
+        A page with seraching workers by name or nic
+        The result is tiles, can be touched can view theie profiles
+
+    Job post screen:
+        title
+        descrption
+        job category  and skills - from drop down.
+
+
+In system users are uniquly identified by nic.
+User can post and apply for jobs.
+Users can send request to other users to connect with them.
+
+Users can upload picture to profile which can be product they provided or profetion things.
+
+yet, we do not need backend simulate them via console logs and json databases.
+
+Use minimum text.
+Use as posible icons here.
+
+Use data in data.text
+
+Make this offline first application
+
