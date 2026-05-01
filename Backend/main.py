@@ -10,6 +10,11 @@ import models, schemas, database, auth
 # Create database tables
 models.Base.metadata.create_all(bind=database.engine)
 
+# Ensure upload directories exist
+for path in ["uploads", "uploads/profiles", "uploads/portfolio"]:
+    if not os.path.exists(path):
+        os.makedirs(path)
+
 app = FastAPI(title="Workforce Platform API")
 
 app.add_middleware(
