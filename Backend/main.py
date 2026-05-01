@@ -173,6 +173,19 @@ def apply_to_job(job_id: str, current_user: models.User = Depends(auth.get_curre
     db.commit()
     return {"message": "Application successful"}
 
+@app.get("/jobs/posted", response_model=list[schemas.Job])
+def get_posted_jobs(current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
+    jobs = db.query(models.Job).filter(models.Job.employer_id == current_user.nic).all()
+    return [map_job_with_apps(j) for j in jobs]
+
+@app.get("/jobs/applied", response_model=list[schemas.Job])
+def get_applied_jobs(current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
+    # Find all job IDs where user has an application
+    app_job_ids = db.query(models.JobApplication.job_id).filter(models.JobApplication.worker_id == current_user.nic).all()
+    job_ids = [r[0] for r in app_job_ids]
+    jobs = db.query(models.Job).filter(models.Job.id.in_(job_ids)).all()
+    return [map_job_with_apps(j) for j in jobs]
+
 # Admin Endpoints
 @app.post("/admin/login")
 def admin_login(payload: dict):
