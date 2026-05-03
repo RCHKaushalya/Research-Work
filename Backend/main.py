@@ -6,6 +6,7 @@ import uuid
 import os
 import shutil
 import models, schemas, database, auth
+import datetime
 
 # Create database tables
 models.Base.metadata.create_all(bind=database.engine)
@@ -246,6 +247,49 @@ def get_admin_applications(db: Session = Depends(database.get_db)):
             "applied_at": app.applied_at
         })
     return results
+
+# SMS Gateway Endpoints
+@app.post("/sms/incoming")
+def receive_incoming_sms(sms: schemas.SMSMessageCreate, db: Session = Depends(database.get_db)):
+    new_sms = models.SMSMessage(
+        phone_number=sms.phone_number,
+        message=sms.message,
+        direction="incoming",
+        status="received"
+    )
+    db.add(new_sms)
+    db.commit()
+    return {"message": "SMS received and stored"}
+
+@app.get("/sms/pending", response_model=list[schemas.SMSMessage])
+def get_pending_sms(db: Session = Depends(database.get_db)):
+    return db.query(models.SMSMessage).filter(
+        models.SMSMessage.direction == "outgoing",
+        models.SMSMessage.status == "pending"
+    ).all()
+
+@app.post("/sms/sent/{sms_id}")
+def mark_sms_as_sent(sms_id: int, db: Session = Depends(database.get_db)):
+    sms = db.query(models.SMSMessage).filter(models.SMSMessage.id == sms_id).first()
+    if not sms:
+        raise HTTPException(status_code=404, detail="SMS not found")
+    sms.status = "sent"
+    sms.sent_at = datetime.datetime.utcnow()
+    db.commit()
+    return {"message": "SMS marked as sent"}
+
+@app.post("/sms/queue", response_model=schemas.SMSMessage)
+def queue_sms(sms: schemas.SMSMessageCreate, db: Session = Depends(database.get_db)):
+    new_sms = models.SMSMessage(
+        phone_number=sms.phone_number,
+        message=sms.message,
+        direction="outgoing",
+        status="pending"
+    )
+    db.add(new_sms)
+    db.commit()
+    db.refresh(new_sms)
+    return new_sms
 
 if __name__ == "__main__":
     import uvicorn

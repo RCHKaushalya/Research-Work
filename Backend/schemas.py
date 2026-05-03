@@ -73,3 +73,20 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     nic: Optional[str] = None
+
+class SMSMessageBase(BaseModel):
+    phone_number: str
+    message: str
+
+class SMSMessageCreate(SMSMessageBase):
+    pass
+
+class SMSMessage(SMSMessageBase):
+    id: int
+    direction: str
+    status: str
+    created_at: datetime
+    sent_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True

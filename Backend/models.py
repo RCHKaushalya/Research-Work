@@ -81,3 +81,14 @@ class Review(Base):
     rating = Column(Integer)
     comment = Column(String)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+class SMSMessage(Base):
+    __tablename__ = "sms_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    phone_number = Column(String, index=True)
+    message = Column(String)
+    direction = Column(String) # incoming, outgoing
+    status = Column(String, default="pending") # pending, sent, failed, received
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    sent_at = Column(DateTime, nullable=True)
