@@ -16,6 +16,10 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     pin: str
 
+class UserLogin(BaseModel):
+    nic: str
+    pin: str
+
 class UserUpdate(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None

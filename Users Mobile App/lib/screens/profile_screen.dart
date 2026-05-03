@@ -13,23 +13,35 @@ import 'registration_start_screen.dart';
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);
 
-  Future<void> _addPortfolioPhoto(BuildContext context, AuthProvider auth) async {
+  Future<void> _addPortfolioPhoto(
+    BuildContext context,
+    AuthProvider auth,
+  ) async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
-      final response = await ApiService.uploadFile('/users/me/portfolio', pickedFile.path);
+      final response = await ApiService.uploadFile(
+        '/users/me/portfolio',
+        pickedFile.path,
+      );
       if (response.statusCode == 200) {
         // Refresh profile
-        await auth.init(); 
+        await auth.init();
       }
     }
   }
 
-  Future<void> _updateProfilePhoto(BuildContext context, AuthProvider auth) async {
+  Future<void> _updateProfilePhoto(
+    BuildContext context,
+    AuthProvider auth,
+  ) async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
-      final response = await ApiService.uploadFile('/users/me/photo', pickedFile.path);
+      final response = await ApiService.uploadFile(
+        '/users/me/photo',
+        pickedFile.path,
+      );
       if (response.statusCode == 200) {
         // Refresh profile
         await auth.init();
@@ -42,7 +54,8 @@ class ProfileScreen extends StatelessWidget {
     return Consumer3<AuthProvider, LocalizationProvider, JobProvider>(
       builder: (context, authProvider, lp, jobProvider, _) {
         final user = authProvider.currentUser;
-        if (user == null) return const Center(child: CircularProgressIndicator());
+        if (user == null)
+          return const Center(child: CircularProgressIndicator());
 
         final appliedJobs = jobProvider.getAppliedJobs(user.nic);
         final postedJobs = jobProvider.getPostedJobs(user.nic);
@@ -53,7 +66,10 @@ class ProfileScreen extends StatelessWidget {
             title: Text(lp.translate('profileTab')),
             actions: [
               IconButton(
-                icon: Icon(isSinhala ? Icons.translate : Icons.language, color: Colors.blue),
+                icon: Icon(
+                  isSinhala ? Icons.translate : Icons.language,
+                  color: Colors.blue,
+                ),
                 onPressed: () => lp.setLanguage(isSinhala ? 'ta' : 'si'),
               ),
               IconButton(
@@ -86,22 +102,44 @@ class ProfileScreen extends StatelessWidget {
                           radius: 50,
                           backgroundColor: Colors.blue.shade50,
                           key: ValueKey(user.profilePhotoPath),
-                          backgroundImage: _getImageProvider(user.profilePhotoPath),
-                          child: user.profilePhotoPath == null 
-                              ? const Icon(Icons.camera_alt, size: 50, color: Colors.blue) 
+                          backgroundImage: _getImageProvider(
+                            user.profilePhotoPath,
+                          ),
+                          child: user.profilePhotoPath == null
+                              ? const Icon(
+                                  Icons.camera_alt,
+                                  size: 50,
+                                  color: Colors.blue,
+                                )
                               : null,
                         ),
                       ),
                       const SizedBox(height: 12),
-                      Text(user.fullName, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                      Text(
+                        user.fullName,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const SizedBox(height: 4),
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.star, color: Colors.orange, size: 20),
+                          const Icon(
+                            Icons.star,
+                            color: Colors.orange,
+                            size: 20,
+                          ),
                           const SizedBox(width: 4),
-                          Text(user.rating.toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
-                          Text(' (12 ${lp.translate('reviews')})', style: const TextStyle(color: Colors.grey)),
+                          Text(
+                            user.rating.toString(),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            ' (12 ${lp.translate('reviews')})',
+                            style: const TextStyle(color: Colors.grey),
+                          ),
                         ],
                       ),
                     ],
@@ -120,10 +158,26 @@ class ProfileScreen extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildStatTile(lp.translate('completedJobs'), user.completedJobsCount.toString(), Colors.green),
-                      _buildStatTile(lp.translate('appliedJobs'), appliedJobs.length.toString(), Colors.blue),
-                      _buildStatTile(lp.translate('postedJobs'), postedJobs.length.toString(), Colors.orange),
-                      _buildStatTile(lp.translate('abandoned'), user.abandonedJobsCount.toString(), Colors.red),
+                      _buildStatTile(
+                        lp.translate('completedJobs'),
+                        user.completedJobsCount.toString(),
+                        Colors.green,
+                      ),
+                      _buildStatTile(
+                        lp.translate('appliedJobs'),
+                        appliedJobs.length.toString(),
+                        Colors.blue,
+                      ),
+                      _buildStatTile(
+                        lp.translate('postedJobs'),
+                        postedJobs.length.toString(),
+                        Colors.orange,
+                      ),
+                      _buildStatTile(
+                        lp.translate('abandoned'),
+                        user.abandonedJobsCount.toString(),
+                        Colors.red,
+                      ),
                     ],
                   ),
                 ),
@@ -134,10 +188,17 @@ class ProfileScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(lp.translate('publicProfile'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(
+                      lp.translate('publicProfile'),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     IconButton(
                       icon: const Icon(Icons.add_a_photo, color: Colors.blue),
-                      onPressed: () => _addPortfolioPhoto(context, authProvider),
+                      onPressed: () =>
+                          _addPortfolioPhoto(context, authProvider),
                     ),
                   ],
                 ),
@@ -146,8 +207,13 @@ class ProfileScreen extends StatelessWidget {
                     ? Container(
                         height: 100,
                         width: double.infinity,
-                        decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(12)),
-                        child: const Center(child: Icon(Icons.photo_library, color: Colors.grey)),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Center(
+                          child: Icon(Icons.photo_library, color: Colors.grey),
+                        ),
                       )
                     : SizedBox(
                         height: 120,
@@ -162,10 +228,14 @@ class ProfileScreen extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(12),
                                 child: Image(
                                   image: _getImageProvider(path)!,
-                                  width: 120, 
-                                  height: 120, 
+                                  width: 120,
+                                  height: 120,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey, child: const Icon(Icons.error)),
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      Container(
+                                        color: Colors.grey,
+                                        child: const Icon(Icons.error),
+                                      ),
                                 ),
                               ),
                             );
@@ -176,7 +246,13 @@ class ProfileScreen extends StatelessWidget {
                 const SizedBox(height: 30),
 
                 // Skills Tiles
-                Text(lp.translate('skills'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(
+                  lp.translate('skills'),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 12),
                 GridView.builder(
                   shrinkWrap: true,
@@ -200,13 +276,20 @@ class ProfileScreen extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
-                          Text(option?.icon ?? '⭐', style: const TextStyle(fontSize: 20)),
+                          Text(
+                            option?.icon ?? '⭐',
+                            style: const TextStyle(fontSize: 20),
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              option?.labelFor(lp.currentLocale.languageCode) ?? id,
+                              option?.labelFor(lp.currentLocale.languageCode) ??
+                                  id,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
                         ],
@@ -218,10 +301,19 @@ class ProfileScreen extends StatelessWidget {
                 const SizedBox(height: 30),
 
                 // Reviews Section
-                Text(lp.translate('reviews'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(
+                  lp.translate('reviews'),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 10),
                 if (user.reviews.isEmpty)
-                  const Text('No reviews yet.', style: TextStyle(color: Colors.grey))
+                  const Text(
+                    'No reviews yet.',
+                    style: TextStyle(color: Colors.grey),
+                  )
                 else
                   ...user.reviews.map((r) => _buildReviewTile(r)),
               ],
@@ -235,14 +327,22 @@ class ProfileScreen extends StatelessWidget {
   ImageProvider? _getImageProvider(String? path) {
     if (path == null) return null;
     if (path.startsWith('http')) return NetworkImage(path);
-    if (path.startsWith('uploads/')) return NetworkImage('${ApiService.baseUrl}/$path');
+    if (path.startsWith('uploads/'))
+      return NetworkImage('${ApiService.baseUrl}/$path');
     return FileImage(File(path));
   }
 
   Widget _buildStatTile(String label, String value, Color color) {
     return Column(
       children: [
-        Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
         Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
       ],
     );
@@ -252,7 +352,10 @@ class ProfileScreen extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       child: ListTile(
-        title: Text(review.authorName, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          review.authorName,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         subtitle: Text(review.comment),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,

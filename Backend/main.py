@@ -52,7 +52,7 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(database.get_d
     return new_user
 
 @app.post("/auth/login")
-def login(user_credentials: schemas.UserCreate, db: Session = Depends(database.get_db)):
+def login(user_credentials: schemas.UserLogin, db: Session = Depends(database.get_db)):
     db_user = db.query(models.User).filter(models.User.nic == user_credentials.nic).first()
     if not db_user:
         raise HTTPException(status_code=400, detail="Invalid NIC")

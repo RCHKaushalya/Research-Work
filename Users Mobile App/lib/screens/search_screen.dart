@@ -15,7 +15,8 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  List<AppUser> _allUsers = []; // In a real app, this would be fetched from a server
+  List<AppUser> _allUsers =
+      []; // In a real app, this would be fetched from a server
 
   @override
   void initState() {
@@ -28,11 +29,11 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     final localizationProvider = context.watch<LocalizationProvider>();
     final authProvider = context.watch<AuthProvider>();
-    
+
     // We'll mock some searchable users since we don't have a 'getAllUsers' method yet
     // Actually, let's just use the current user as a searchable item if we search for them,
     // and maybe the demo user.
-    
+
     return Scaffold(
       appBar: AppBar(
         title: Text(localizationProvider.translate('searchWorker')),
@@ -50,19 +51,19 @@ class _SearchScreenState extends State<SearchScreen> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                suffixIcon: _searchQuery.isNotEmpty 
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        _searchController.clear();
-                        setState(() => _searchQuery = '');
-                      },
-                    )
-                  : null,
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = '');
+                        },
+                      )
+                    : null,
               ),
             ),
           ),
-          
+
           Expanded(
             child: _searchQuery.isEmpty
                 ? _buildInitialState(localizationProvider)
@@ -94,17 +95,20 @@ class _SearchScreenState extends State<SearchScreen> {
     // In a real app, AuthProvider would have a 'searchUsers' method.
     final currentUser = auth.currentUser;
     List<AppUser> results = [];
-    
+
     if (currentUser != null) {
-      if (currentUser.fullName.toLowerCase().contains(_searchQuery.toLowerCase()) || 
+      if (currentUser.fullName.toLowerCase().contains(
+            _searchQuery.toLowerCase(),
+          ) ||
           currentUser.nic.contains(_searchQuery)) {
         results.add(currentUser);
       }
     }
-    
+
     // Mock additional results
     if ("Nimal Silva".toLowerCase().contains(_searchQuery.toLowerCase())) {
-        results.add(AppUser(
+      results.add(
+        AppUser(
           nic: '851234567V',
           firstName: 'Nimal',
           lastName: 'Silva',
@@ -114,9 +118,10 @@ class _SearchScreenState extends State<SearchScreen> {
           dsAreaName: 'Colombo 03',
           jobCategoryIds: ['C01'],
           jobCategoryNames: ['Construction'],
-          skillIds: ['S01'],
+          skillIds: ['S101'],
           skillNames: ['Masonry'],
-        ));
+        ),
+      );
     }
 
     if (results.isEmpty) {
@@ -135,7 +140,9 @@ class _SearchScreenState extends State<SearchScreen> {
               child: const Icon(Icons.person, color: Colors.blue),
             ),
             title: Text(user.fullName),
-            subtitle: Text('${user.districtName} • ${user.skillNames.take(2).join(", ")}'),
+            subtitle: Text(
+              '${user.districtName} • ${user.skillNames.take(2).join(", ")}',
+            ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               Navigator.push(

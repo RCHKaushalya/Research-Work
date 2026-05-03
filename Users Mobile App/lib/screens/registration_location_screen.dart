@@ -64,8 +64,6 @@ class _RegistrationLocationScreenState
         dsAreaName: selectedDSArea.name,
       );
 
-      await context.read<AuthProvider>().saveUser(updatedUser);
-
       if (mounted) {
         Navigator.push(
           context,

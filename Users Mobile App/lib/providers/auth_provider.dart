@@ -99,7 +99,7 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> completeRegistration(AppUser user) async {
+  Future<AuthResult> completeRegistration(AppUser user) async {
     _busy = true;
     notifyListeners();
     
@@ -110,7 +110,7 @@ class AuthProvider extends ChangeNotifier {
         'first_name': user.firstName,
         'last_name': user.lastName,
         'phone': user.phone,
-        'language': 'si', // Default, can be updated later
+        'language': 'si', // Default
         'district': user.districtName ?? '',
         'ds_area': user.dsAreaName ?? '',
         'job_category_ids': user.jobCategoryIds,
@@ -119,12 +119,53 @@ class AuthProvider extends ChangeNotifier {
 
       if (response.statusCode == 200) {
         // Auto login after registration
-        await login(nic: user.nic, pin: user.pin);
+        return await login(nic: user.nic, pin: user.pin);
       }
+      
+      return AuthResult(
+        isSuccess: false, 
+        message: _getErrorMessage(response.body),
+      );
+    } catch (e) {
+      return AuthResult(isSuccess: false, message: 'Registration error: $e');
     } finally {
       _busy = false;
       notifyListeners();
     }
+  }
+
+  Future<bool> uploadProfilePhoto(String filePath) async {
+    try {
+      final response = await ApiService.uploadFile('/users/me/photo', filePath);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (_currentUser != null) {
+          // Update local user with photo path from server
+          _currentUser = AppUser(
+            nic: _currentUser!.nic,
+            firstName: _currentUser!.firstName,
+            lastName: _currentUser!.lastName,
+            phone: _currentUser!.phone,
+            pin: _currentUser!.pin,
+            districtName: _currentUser!.districtName,
+            dsAreaName: _currentUser!.dsAreaName,
+            jobCategoryIds: _currentUser!.jobCategoryIds,
+            jobCategoryNames: _currentUser!.jobCategoryNames,
+            skillIds: _currentUser!.skillIds,
+            skillNames: _currentUser!.skillNames,
+            profilePhotoPath: data['profile_photo_path'],
+            rating: _currentUser!.rating,
+            completedJobsCount: _currentUser!.completedJobsCount,
+            abandonedJobsCount: _currentUser!.abandonedJobsCount,
+          );
+          notifyListeners();
+        }
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Photo upload error: $e');
+    }
+    return false;
   }
 
   Future<void> saveUser(AppUser user) async {

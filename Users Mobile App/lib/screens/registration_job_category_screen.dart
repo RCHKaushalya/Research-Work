@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../data/registration_catalog.dart';
 import '../models/app_user.dart';
 import '../providers/auth_provider.dart';
 import '../providers/localization_provider.dart';
@@ -17,14 +18,6 @@ class RegistrationJobCategoryScreen extends StatefulWidget {
 
 class _RegistrationJobCategoryScreenState
     extends State<RegistrationJobCategoryScreen> {
-  final List<Map<String, dynamic>> _categories = [
-    {'id': 'C01', 'name': 'ඉදිකිරීම්', 'icon': Icons.construction},
-    {'id': 'C02', 'name': 'ප්‍රවාහන', 'icon': Icons.local_shipping},
-    {'id': 'C03', 'name': 'කෘෂිකර්ම', 'icon': Icons.agriculture},
-    {'id': 'C04', 'name': 'පිරිසිදු කිරීම්', 'icon': Icons.cleaning_services},
-    {'id': 'C05', 'name': 'තාක්ෂණික', 'icon': Icons.electrical_services},
-  ];
-
   final List<String> _selectedIds = [];
   bool _submitting = false;
 
@@ -34,17 +27,15 @@ class _RegistrationJobCategoryScreenState
 
     setState(() => _submitting = true);
 
-    final selectedNames = _categories
-        .where((c) => _selectedIds.contains(c['id']))
-        .map((c) => c['name'] as String)
+    final selectedNames = RegistrationCatalog.jobCategories
+        .where((c) => _selectedIds.contains(c.id))
+        .map((c) => c.labelFor(lp.currentLocale.languageCode))
         .toList();
 
     final updatedUser = widget.user.copyWith(
       jobCategoryIds: _selectedIds,
       jobCategoryNames: selectedNames,
     );
-
-    await authProvider.saveUser(updatedUser);
 
     if (mounted) {
       Navigator.push(
@@ -67,45 +58,140 @@ class _RegistrationJobCategoryScreenState
               TextButton(
                 onPressed: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => RegistrationSkillsScreen(user: widget.user)),
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        RegistrationSkillsScreen(user: widget.user),
+                  ),
                 ),
-                child: Text(lp.translate('skip'), style: const TextStyle(color: Colors.blue)),
+                child: Text(
+                  lp.translate('skip'),
+                  style: const TextStyle(color: Colors.blue),
+                ),
               ),
             ],
           ),
           body: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text(
+                  lp.translate('jobCategory'),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  lp.translate('selectJobCategory'),
+                  style: TextStyle(color: Colors.grey.shade600),
+                ),
+                const SizedBox(height: 20),
                 Expanded(
                   child: GridView.builder(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                    ),
-                    itemCount: _categories.length,
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 14,
+                          mainAxisSpacing: 14,
+                          childAspectRatio: 1.05,
+                        ),
+                    itemCount: RegistrationCatalog.jobCategories.length,
                     itemBuilder: (context, index) {
-                      final cat = _categories[index];
-                      final isSelected = _selectedIds.contains(cat['id']);
+                      final cat = RegistrationCatalog.jobCategories[index];
+                      final isSelected = _selectedIds.contains(cat.id);
                       return InkWell(
+                        borderRadius: BorderRadius.circular(18),
                         onTap: () {
                           setState(() {
-                            isSelected ? _selectedIds.remove(cat['id']) : _selectedIds.add(cat['id']);
+                            if (isSelected) {
+                              _selectedIds.remove(cat.id);
+                            } else {
+                              _selectedIds.add(cat.id);
+                            }
                           });
                         },
-                        child: Container(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
                           decoration: BoxDecoration(
-                            color: isSelected ? Colors.blue.shade100 : Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: isSelected ? Colors.blue : Colors.transparent),
+                            gradient: isSelected
+                                ? LinearGradient(
+                                    colors: [
+                                      Colors.blue.shade600,
+                                      Colors.blue.shade400,
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  )
+                                : LinearGradient(
+                                    colors: [Colors.white, Colors.blue.shade50],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: isSelected
+                                  ? Colors.blue.shade700
+                                  : Colors.blue.shade100,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.04),
+                                blurRadius: 16,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
                           ),
+                          padding: const EdgeInsets.all(14),
                           child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Icon(cat['icon'], size: 40, color: isSelected ? Colors.blue : Colors.grey),
-                              const SizedBox(height: 12),
-                              Text(cat['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    cat.icon,
+                                    style: const TextStyle(fontSize: 30),
+                                  ),
+                                  Icon(
+                                    isSelected
+                                        ? Icons.check_circle
+                                        : Icons.radio_button_unchecked,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : Colors.blueGrey,
+                                  ),
+                                ],
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    cat.labelFor(lp.currentLocale.languageCode),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : Colors.black87,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${RegistrationCatalog.skillsByCategory[cat.id]?.length ?? 0} ${lp.translate('skills')}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: isSelected
+                                          ? Colors.white.withOpacity(0.85)
+                                          : Colors.blueGrey,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                         ),
@@ -119,9 +205,16 @@ class _RegistrationJobCategoryScreenState
                   height: 52,
                   child: ElevatedButton(
                     onPressed: _selectedIds.isEmpty ? null : _submit,
-                    child: _submitting 
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : Text(lp.translate('nextButton')),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue.shade600,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: _submitting
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : Text(lp.translate('nextButton')),
                   ),
                 ),
               ],

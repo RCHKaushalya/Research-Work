@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'dart:io' as io;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -17,36 +18,42 @@ class RegistrationPhotoScreen extends StatefulWidget {
 }
 
 class _RegistrationPhotoScreenState extends State<RegistrationPhotoScreen> {
-  File? _image;
+  XFile? _image;
   final _picker = ImagePicker();
   bool _submitting = false;
 
   Future<void> _pickImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
-      setState(() => _image = File(pickedFile.path));
+      setState(() => _image = pickedFile);
     }
   }
 
   Future<void> _submit() async {
     final authProvider = context.read<AuthProvider>();
-    final lp = context.read<LocalizationProvider>();
-
     setState(() => _submitting = true);
 
-    final updatedUser = widget.user.copyWith(
-      profilePhotoPath: _image?.path,
-    );
+    final result = await authProvider.completeRegistration(widget.user);
+    
+    if (result.isSuccess) {
+      if (_image != null) {
+        await authProvider.uploadProfilePhoto(_image!.path);
+      }
 
-    await authProvider.saveUser(updatedUser);
-    await authProvider.login(nic: updatedUser.nic, pin: updatedUser.pin);
-
-    if (mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const MainLayoutScreen()),
-        (route) => false,
-      );
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const MainLayoutScreen()),
+          (route) => false,
+        );
+      }
+    } else {
+      if (mounted) {
+        setState(() => _submitting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result.message)),
+        );
+      }
     }
   }
 
@@ -75,7 +82,11 @@ class _RegistrationPhotoScreenState extends State<RegistrationPhotoScreen> {
                         border: Border.all(color: Colors.blue.shade200, width: 2),
                       ),
                       child: _image != null
-                        ? ClipOval(child: Image.file(_image!, fit: BoxFit.cover))
+                        ? ClipOval(
+                            child: kIsWeb 
+                              ? Image.network(_image!.path, fit: BoxFit.cover)
+                              : Image.file(io.File(_image!.path), fit: BoxFit.cover)
+                          )
                         : Icon(Icons.add_a_photo, size: 60, color: Colors.blue.shade300),
                     ),
                   ),

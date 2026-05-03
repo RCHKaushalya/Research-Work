@@ -44,9 +44,7 @@ class _RegistrationBasicInfoScreenState
       _submitting = true;
     });
 
-    final authProvider = context.read<AuthProvider>();
     final lp = context.read<LocalizationProvider>();
-
     final user = AppUser(
       nic: _nicController.text.trim().toUpperCase(),
       firstName: _firstNameController.text.trim(),
@@ -55,19 +53,9 @@ class _RegistrationBasicInfoScreenState
       pin: _pinController.text.trim(),
     );
 
-    await authProvider.saveUser(user);
-
-    if (!mounted) {
-      return;
-    }
-
     setState(() {
       _submitting = false;
     });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(lp.translate('success'))),
-    );
 
     // Navigate to location screen
     if (mounted) {

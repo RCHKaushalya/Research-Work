@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../data/registration_catalog.dart';
 import '../models/app_user.dart';
 import '../providers/auth_provider.dart';
 import '../providers/localization_provider.dart';
@@ -11,18 +12,11 @@ class RegistrationSkillsScreen extends StatefulWidget {
   const RegistrationSkillsScreen({super.key, required this.user});
 
   @override
-  State<RegistrationSkillsScreen> createState() => _RegistrationSkillsScreenState();
+  State<RegistrationSkillsScreen> createState() =>
+      _RegistrationSkillsScreenState();
 }
 
 class _RegistrationSkillsScreenState extends State<RegistrationSkillsScreen> {
-  final Map<String, List<Map<String, String>>> _allSkills = {
-    'C01': [{'id': 'S01', 'name': 'මේසන්'}, {'id': 'S02', 'name': 'වඩු වැඩ'}],
-    'C02': [{'id': 'S03', 'name': 'පැදවීම'}, {'id': 'S04', 'name': 'බෙදාහැරීම'}],
-    'C03': [{'id': 'S05', 'name': 'වගාව'}, {'id': 'S06', 'name': 'අස්වනු නෙලීම'}],
-    'C04': [{'id': 'S07', 'name': 'නිවාස පිරිසිදු කිරීම'}, {'id': 'S08', 'name': 'කාර්යාල පිරිසිදු කිරීම'}],
-    'C05': [{'id': 'S09', 'name': 'විදුලි වැඩ'}, {'id': 'S10', 'name': 'නල වැඩ'}],
-  };
-
   final List<String> _selectedIds = [];
   bool _submitting = false;
 
@@ -32,27 +26,23 @@ class _RegistrationSkillsScreenState extends State<RegistrationSkillsScreen> {
 
     setState(() => _submitting = true);
 
-    List<String> selectedNames = [];
-    for (var catId in widget.user.jobCategoryIds) {
-      final catSkills = _allSkills[catId] ?? [];
-      for (var skill in catSkills) {
-        if (_selectedIds.contains(skill['id'])) {
-          selectedNames.add(skill['name']!);
-        }
-      }
-    }
+    final selectedNames =
+        RegistrationCatalog.skillsForCategories(widget.user.jobCategoryIds)
+            .where((skill) => _selectedIds.contains(skill.id))
+            .map((skill) => skill.labelFor(lp.currentLocale.languageCode))
+            .toList();
 
     final updatedUser = widget.user.copyWith(
       skillIds: _selectedIds,
       skillNames: selectedNames,
     );
 
-    await authProvider.saveUser(updatedUser);
-
     if (mounted) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => RegistrationPhotoScreen(user: updatedUser)),
+        MaterialPageRoute(
+          builder: (context) => RegistrationPhotoScreen(user: updatedUser),
+        ),
       );
     }
   }
@@ -61,10 +51,9 @@ class _RegistrationSkillsScreenState extends State<RegistrationSkillsScreen> {
   Widget build(BuildContext context) {
     return Consumer<LocalizationProvider>(
       builder: (context, lp, _) {
-        final List<Map<String, String>> availableSkills = [];
-        for (var catId in widget.user.jobCategoryIds) {
-          availableSkills.addAll(_allSkills[catId] ?? []);
-        }
+        final availableSkills = RegistrationCatalog.skillsForCategories(
+          widget.user.jobCategoryIds,
+        );
 
         return Scaffold(
           appBar: AppBar(
@@ -73,33 +62,71 @@ class _RegistrationSkillsScreenState extends State<RegistrationSkillsScreen> {
               TextButton(
                 onPressed: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => RegistrationPhotoScreen(user: widget.user)),
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        RegistrationPhotoScreen(user: widget.user),
+                  ),
                 ),
-                child: Text(lp.translate('skip'), style: const TextStyle(color: Colors.blue)),
+                child: Text(
+                  lp.translate('skip'),
+                  style: const TextStyle(color: Colors.blue),
+                ),
               ),
             ],
           ),
           body: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text(
+                  lp.translate('skills'),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Pick the skills that match your work',
+                  style: TextStyle(color: Colors.grey.shade600),
+                ),
+                const SizedBox(height: 20),
                 Expanded(
-                  child: ListView.builder(
-                    itemCount: availableSkills.length,
-                    itemBuilder: (context, index) {
-                      final skill = availableSkills[index];
-                      final isSelected = _selectedIds.contains(skill['id']);
-                      return CheckboxListTile(
-                        value: isSelected,
-                        title: Text(skill['name']!),
-                        onChanged: (val) {
-                          setState(() {
-                            val! ? _selectedIds.add(skill['id']!) : _selectedIds.remove(skill['id']);
-                          });
-                        },
-                      );
-                    },
-                  ),
+                  child: availableSkills.isEmpty
+                      ? Center(
+                          child: Text(
+                            'Select job categories first',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey.shade600),
+                          ),
+                        )
+                      : SingleChildScrollView(
+                          child: Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: availableSkills.map((skill) {
+                              final isSelected = _selectedIds.contains(
+                                skill.id,
+                              );
+                              return FilterChip(
+                                selected: isSelected,
+                                avatar: Text(skill.icon),
+                                label: Text(
+                                  skill.labelFor(lp.currentLocale.languageCode),
+                                ),
+                                onSelected: (selected) {
+                                  setState(() {
+                                    if (selected) {
+                                      _selectedIds.add(skill.id);
+                                    } else {
+                                      _selectedIds.remove(skill.id);
+                                    }
+                                  });
+                                },
+                              );
+                            }).toList(),
+                          ),
+                        ),
                 ),
                 const SizedBox(height: 24),
                 SizedBox(
@@ -107,9 +134,16 @@ class _RegistrationSkillsScreenState extends State<RegistrationSkillsScreen> {
                   height: 52,
                   child: ElevatedButton(
                     onPressed: _selectedIds.isEmpty ? null : _submit,
-                    child: _submitting 
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : Text(lp.translate('nextButton')),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue.shade600,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: _submitting
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : Text(lp.translate('nextButton')),
                   ),
                 ),
               ],
