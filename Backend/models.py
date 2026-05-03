@@ -29,7 +29,8 @@ class User(Base):
     is_blocked = Column(Integer, default=0) # 0 = active, 1 = blocked
 
     # Relationships
-    posted_jobs = relationship("Job", back_populates="employer")
+    posted_jobs = relationship("Job", back_populates="employer", foreign_keys="[Job.employer_id]")
+    assigned_tasks = relationship("Job", back_populates="worker", foreign_keys="[Job.assigned_worker_id]")
     portfolio = relationship("PortfolioItem", back_populates="user")
 
 class Job(Base):
@@ -48,7 +49,7 @@ class Job(Base):
 
     # Relationships
     employer = relationship("User", foreign_keys=[employer_id], back_populates="posted_jobs")
-    worker = relationship("User", foreign_keys=[assigned_worker_id])
+    worker = relationship("User", foreign_keys=[assigned_worker_id], back_populates="assigned_tasks")
     applications = relationship("JobApplication", back_populates="job")
 
 class JobApplication(Base):
