@@ -202,11 +202,22 @@ def get_admin_stats(db: Session = Depends(database.get_db)):
     total_jobs = db.query(models.Job).count()
     active_jobs = db.query(models.Job).filter(models.Job.status == "open").count()
     total_apps = db.query(models.JobApplication).count()
+    
+    # SMS Stats
+    total_sms = db.query(models.SMSMessage).count()
+    pending_sms = db.query(models.SMSMessage).filter(models.SMSMessage.status == "pending").count()
+    sent_sms = db.query(models.SMSMessage).filter(models.SMSMessage.status == "sent").count()
+    received_sms = db.query(models.SMSMessage).filter(models.SMSMessage.direction == "incoming").count()
+    
     return {
         "total_users": total_users,
         "total_jobs": total_jobs,
         "active_jobs": active_jobs,
-        "total_applications": total_apps
+        "total_applications": total_apps,
+        "total_sms": total_sms,
+        "pending_sms": pending_sms,
+        "sent_sms": sent_sms,
+        "received_sms": received_sms
     }
 
 @app.get("/admin/users", response_model=list[schemas.User])
@@ -247,6 +258,10 @@ def get_admin_applications(db: Session = Depends(database.get_db)):
             "applied_at": app.applied_at
         })
     return results
+
+@app.get("/admin/sms", response_model=list[schemas.SMSMessage])
+def get_admin_sms(db: Session = Depends(database.get_db)):
+    return db.query(models.SMSMessage).order_by(models.SMSMessage.created_at.desc()).all()
 
 # SMS Gateway Endpoints
 @app.post("/sms/incoming")

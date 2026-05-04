@@ -41,12 +41,12 @@
                     <span id="stat-jobs" class="value">0</span>
                 </div>
                 <div class="stat-card">
-                    <span class="label">Active Jobs</span>
-                    <span id="stat-active" class="value">0</span>
-                </div>
-                <div class="stat-card">
                     <span class="label">Applications</span>
                     <span id="stat-apps" class="value">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="label">SMS Logs</span>
+                    <span id="stat-sms" class="value">0</span>
                 </div>
             </div>
 
@@ -54,6 +54,7 @@
                 <button class="tab-btn active" data-tab="users-tab">Users</button>
                 <button class="tab-btn" data-tab="jobs-tab">Jobs</button>
                 <button class="tab-btn" data-tab="apps-tab">Applications</button>
+                <button class="tab-btn" data-tab="sms-tab">SMS Gateway</button>
             </div>
 
             <div id="users-tab" class="tab-content active">
@@ -118,6 +119,32 @@
                                 </tr>
                             </thead>
                             <tbody id="apps-table-body">
+                                <!-- Data injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="sms-tab" class="tab-content">
+                <div class="card table-card">
+                    <div class="card-header-actions">
+                        <h3>SMS Gateway Logs</h3>
+                        <button id="queue-sms-btn" class="btn primary-sm">Queue Test SMS</button>
+                    </div>
+                    <div class="table-scroll">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Phone Number</th>
+                                    <th>Message</th>
+                                    <th>Direction</th>
+                                    <th>Status</th>
+                                    <th>Created At</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sms-table-body">
                                 <!-- Data injected here -->
                             </tbody>
                         </table>
