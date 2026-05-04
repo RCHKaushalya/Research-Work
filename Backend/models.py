@@ -27,6 +27,7 @@ class User(Base):
     rating = Column(Float, default=0.0)
     profile_photo_path = Column(String, nullable=True)
     is_blocked = Column(Integer, default=0) # 0 = active, 1 = blocked
+    availability_status = Column(String, default="available") # available, busy, unavailable
 
     # Relationships
     posted_jobs = relationship("Job", back_populates="employer", foreign_keys="[Job.employer_id]")

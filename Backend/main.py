@@ -200,6 +200,21 @@ def update_me(user_update: schemas.UserUpdate, current_user: models.User = Depen
     db.refresh(current_user)
     return current_user
 
+@app.put("/users/me/availability", response_model=schemas.User)
+def set_availability(
+    availability: schemas.AvailabilityUpdate,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    """Worker sets their own availability: available, busy, or unavailable."""
+    allowed = {"available", "busy", "unavailable"}
+    if availability.status not in allowed:
+        raise HTTPException(status_code=400, detail=f"Status must be one of: {allowed}")
+    current_user.availability_status = availability.status
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
 @app.post("/users/me/photo")
 async def upload_profile_photo(file: UploadFile = File(...), current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
     file_extension = os.path.splitext(file.filename)[1]
@@ -304,6 +319,48 @@ def apply_to_job(job_id: str, current_user: models.User = Depends(auth.get_curre
     db.add(new_app)
     db.commit()
     return {"message": "Application successful"}
+
+@app.post("/jobs/{job_id}/abandon")
+def abandon_job(
+    job_id: str,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    """
+    Mark a job as abandoned.
+    Can be triggered by:
+      - The assigned worker (self-reporting they are leaving).
+      - The employer (reporting the worker abandoned the task).
+    In both cases, the worker's abandoned_jobs_count and rating are penalised.
+    """
+    job = db.query(models.Job).filter(models.Job.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    # Allow only the assigned worker or the employer to report abandonment
+    is_assigned_worker = job.assigned_worker_id == current_user.nic
+    is_employer = job.employer_id == current_user.nic
+
+    if not is_assigned_worker and not is_employer:
+        raise HTTPException(status_code=403, detail="Only the assigned worker or employer can report abandonment")
+
+    if job.status not in ("assigned", "open"):
+        raise HTTPException(status_code=400, detail="Job cannot be marked as abandoned in its current state")
+
+    # Penalise the assigned worker
+    if job.assigned_worker_id:
+        worker = db.query(models.User).filter(models.User.nic == job.assigned_worker_id).first()
+        if worker:
+            worker.abandoned_jobs_count += 1
+            # Rating penalty: -0.5 per abandonment, floored at 0
+            worker.rating = max(0.0, round(worker.rating - 0.5, 1))
+            # Reset availability so they can take new jobs
+            worker.availability_status = "available"
+
+    job.status = "abandoned"
+    db.commit()
+    db.refresh(job)
+    return {"message": "Job marked as abandoned", "job_id": job.id, "status": job.status}
 
 @app.get("/jobs/posted", response_model=list[schemas.Job])
 def get_posted_jobs(current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):

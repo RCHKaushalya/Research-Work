@@ -8,8 +8,8 @@ class UserBase(BaseModel):
     last_name: str
     phone: str
     language: str
-    district: str
-    ds_area: str
+    district: Optional[str] = None
+    ds_area: Optional[str] = None
     job_category_ids: List[str] = []
     skill_ids: List[str] = []
 
@@ -28,6 +28,10 @@ class UserUpdate(BaseModel):
     ds_area: Optional[str] = None
     job_category_ids: Optional[List[str]] = None
     skill_ids: Optional[List[str]] = None
+    availability_status: Optional[str] = None  # available, busy, unavailable
+
+class AvailabilityUpdate(BaseModel):
+    status: str  # available, busy, unavailable
 
 class User(UserBase):
     posted_jobs_count: int
@@ -38,6 +42,7 @@ class User(UserBase):
     rating: float
     profile_photo_path: Optional[str] = None
     is_blocked: int = 0
+    availability_status: str = "available"
 
     class Config:
         from_attributes = True
@@ -64,7 +69,7 @@ class Job(JobBase):
         from_attributes = True
 
 class JobStatusUpdate(BaseModel):
-    status: str # open, assigned, completed, cancelled
+    status: str # open, assigned, completed, cancelled, abandoned
     assigned_worker_id: Optional[str] = None
 
 class Token(BaseModel):

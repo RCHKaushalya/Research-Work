@@ -91,20 +91,27 @@ async function loadUsers() {
             <tr>
                 <td>
                     <div class="user-cell">
-                        <img src="${user.profile_photo_path ? '/' + user.profile_photo_path : 'https://ui-avatars.com/api/?name=' + user.first_name + '+' + user.last_name}" class="profile-thumb" alt="Avatar">
+                        <img src="${user.profile_photo_path ? '/' + user.profile_photo_path : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.first_name + '+' + user.last_name)}" class="profile-thumb" alt="Avatar">
                         <div>
                             <strong>${user.first_name} ${user.last_name}</strong><br>
-                            <small class="text-light">${user.nic}</small>
+                            <small style="color:var(--text-light)">${user.nic}</small>
                         </div>
                     </div>
                 </td>
                 <td>${user.phone}</td>
-                <td>${user.district}, ${user.ds_area}</td>
-                <td>⭐ ${user.rating}</td>
+                <td>${user.district || '—'}, ${user.ds_area || '—'}</td>
                 <td>
-                    <span class="badge incoming">${user.completed_jobs_count} Done</span>
-                    <span class="badge outgoing">${user.posted_jobs_count} Posted</span>
-                    ${user.is_blocked ? '<span class="badge cancelled">Blocked</span>' : ''}
+                    <strong>⭐ ${user.rating}</strong><br>
+                    <small style="color:var(--text-light)">${user.abandoned_jobs_count} abandoned</small>
+                </td>
+                <td>
+                    <span class="badge ${user.availability_status || 'available'}">${user.availability_status || 'available'}</span>
+                    ${user.is_blocked ? '<span class="badge cancelled" style="margin-left:4px">Blocked</span>' : ''}
+                </td>
+                <td>
+                    <span class="badge incoming" title="Completed">${user.completed_jobs_count} ✓</span>
+                    <span class="badge abandoned" title="Abandoned">${user.abandoned_jobs_count} ✗</span>
+                    <span class="badge outgoing" title="Posted">${user.posted_jobs_count} 📋</span>
                 </td>
                 <td>
                     <button class="btn-sm ${user.is_blocked ? 'success' : 'danger'}" onclick="toggleBlockUser('${user.nic}')">
