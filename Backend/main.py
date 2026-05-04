@@ -8,11 +8,18 @@ import shutil
 import models, schemas, database, auth
 import datetime
 
+# Absolute path anchor — always resolves to the Backend/ directory
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # Create database tables
 models.Base.metadata.create_all(bind=database.engine)
 
-# Ensure upload directories exist
-for path in ["uploads", "uploads/profiles", "uploads/portfolio"]:
+# Ensure upload directories exist (absolute paths)
+for path in [
+    os.path.join(BASE_DIR, "uploads"),
+    os.path.join(BASE_DIR, "uploads", "profiles"),
+    os.path.join(BASE_DIR, "uploads", "portfolio")
+]:
     if not os.path.exists(path):
         os.makedirs(path)
 
@@ -26,9 +33,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve static files for uploads and Admin Web App
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
-app.mount("/admin-ui", StaticFiles(directory="admin_portal", html=True), name="admin-ui")
+# Serve static files using absolute paths
+app.mount("/uploads", StaticFiles(directory=os.path.join(BASE_DIR, "uploads")), name="uploads")
+app.mount("/admin-ui", StaticFiles(directory=os.path.join(BASE_DIR, "admin_portal"), html=True), name="admin-ui")
 
 def map_job_with_apps(job: models.Job):
     job_dict = {c.name: getattr(job, c.name) for c in job.__table__.columns}
@@ -219,12 +226,12 @@ def set_availability(
 async def upload_profile_photo(file: UploadFile = File(...), current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
     file_extension = os.path.splitext(file.filename)[1]
     file_name = f"{current_user.nic}_{uuid.uuid4()}{file_extension}"
-    file_path = os.path.join("uploads", "profiles", file_name)
-    
+    file_path = os.path.join(BASE_DIR, "uploads", "profiles", file_name)
+
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
-    
-    current_user.profile_photo_path = file_path.replace("\\", "/")
+
+    current_user.profile_photo_path = os.path.join("uploads", "profiles", file_name).replace("\\", "/")
     db.commit()
     return {"profile_photo_path": current_user.profile_photo_path}
 
@@ -232,12 +239,15 @@ async def upload_profile_photo(file: UploadFile = File(...), current_user: model
 async def upload_portfolio_photo(file: UploadFile = File(...), current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
     file_extension = os.path.splitext(file.filename)[1]
     file_name = f"{current_user.nic}_{uuid.uuid4()}{file_extension}"
-    file_path = os.path.join("uploads", "portfolio", file_name)
-    
+    file_path = os.path.join(BASE_DIR, "uploads", "portfolio", file_name)
+
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
-    
-    db_portfolio = models.PortfolioItem(user_id=current_user.nic, photo_path=file_path.replace("\\", "/"))
+
+    db_portfolio = models.PortfolioItem(
+        user_id=current_user.nic,
+        photo_path=os.path.join("uploads", "portfolio", file_name).replace("\\", "/")
+    )
     db.add(db_portfolio)
     db.commit()
     return {"photo_path": db_portfolio.photo_path}
