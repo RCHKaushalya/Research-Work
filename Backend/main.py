@@ -35,6 +35,128 @@ def map_job_with_apps(job: models.Job):
     job_dict['applied_worker_ids'] = [app.worker_id for app in job.applications]
     return job_dict
 
+def send_sms(phone_number: str, message: str, db: Session):
+    new_sms = models.SMSMessage(
+        phone_number=phone_number,
+        message=message,
+        direction="outgoing",
+        status="pending"
+    )
+    db.add(new_sms)
+    db.commit()
+    db.refresh(new_sms)
+    return new_sms
+
+def process_sms_command(phone_number: str, message: str, db: Session):
+    parts = message.strip().split()
+    if not parts: return
+    
+    cmd = parts[0].upper()
+    
+    # 1. REG <NIC> <First Name> <Last Name>
+    if cmd == "REG" and len(parts) >= 4:
+        nic = parts[1]
+        first_name = parts[2]
+        last_name = " ".join(parts[3:])
+        
+        user = db.query(models.User).filter(models.User.nic == nic).first()
+        if not user:
+            user = models.User(nic=nic, first_name=first_name, last_name=last_name, phone=phone_number, language="en")
+            db.add(user)
+        else:
+            user.first_name = first_name
+            user.last_name = last_name
+            user.phone = phone_number
+        db.commit()
+        send_sms(phone_number, f"Welcome {first_name}! You are registered. Set your area using 'Area <D_id> <DS_id>' and skills using 'Skill <S_id>'.", db)
+
+    # 2. Area <D_id> <ds_id>
+    elif cmd == "AREA" and len(parts) >= 3:
+        user = db.query(models.User).filter(models.User.phone == phone_number).first()
+        if not user:
+            send_sms(phone_number, "Please register first using REG <NIC> <First> <Last>", db)
+            return
+        user.district = parts[1]
+        user.ds_area = parts[2]
+        db.commit()
+        send_sms(phone_number, f"Area updated to {user.district}, {user.ds_area}.", db)
+
+    # 3. Skill <s_id>
+    elif cmd == "SKILL" and len(parts) >= 2:
+        user = db.query(models.User).filter(models.User.phone == phone_number).first()
+        if not user:
+            send_sms(phone_number, "Please register first using REG <NIC> <First> <Last>", db)
+            return
+        skill_id = parts[1]
+        skills = user.skill_ids or []
+        if skill_id not in skills:
+            skills.append(skill_id)
+            user.skill_ids = skills
+            # Automatically set job category based on skill_id (simple logic)
+            cats = user.job_category_ids or []
+            cat_id = f"CAT_{skill_id}"
+            if cat_id not in cats: cats.append(cat_id)
+            user.job_category_ids = cats
+            db.commit()
+        send_sms(phone_number, f"Skill {skill_id} added. Category {cat_id} set.", db)
+
+    # 4. JOB
+    elif cmd == "JOB":
+        user = db.query(models.User).filter(models.User.phone == phone_number).first()
+        if not user or not user.ds_area:
+            send_sms(phone_number, "Register and set your Area first.", db)
+            return
+        
+        # Find 5 jobs in area matching skills
+        query = db.query(models.Job).filter(models.Job.status == "open", models.Job.area == user.ds_area)
+        all_jobs = query.all()
+        
+        # Filter by skills in Python
+        matching_jobs = []
+        user_skills = set(user.skill_ids or [])
+        for j in all_jobs:
+            job_skills = set(j.skill_ids_needed or [])
+            if not user_skills or user_skills.intersection(job_skills):
+                matching_jobs.append(j)
+                if len(matching_jobs) >= 5: break
+        
+        if not matching_jobs:
+            send_sms(phone_number, "No matching jobs found in your area right now.", db)
+        else:
+            response = "Jobs for you:\n"
+            for j in matching_jobs:
+                response += f"- {j.title} (ID: {j.id[:4]})\n"
+            response += "Apply using APPLY <ID>"
+            send_sms(phone_number, response, db)
+
+    # 5. APPLY <job_id>
+    elif cmd == "APPLY" and len(parts) >= 2:
+        user = db.query(models.User).filter(models.User.phone == phone_number).first()
+        if not user:
+            send_sms(phone_number, "Please register first.", db)
+            return
+        
+        job_id_part = parts[1]
+        # Match partial ID if needed or full
+        job = db.query(models.Job).filter(models.Job.id.like(f"{job_id_part}%")).first()
+        if not job:
+            send_sms(phone_number, "Job not found.", db)
+            return
+        
+        # Application logic
+        existing_app = db.query(models.JobApplication).filter(models.JobApplication.job_id == job.id, models.JobApplication.worker_id == user.nic).first()
+        if existing_app:
+            send_sms(phone_number, "You already applied for this job.", db)
+        else:
+            new_app = models.JobApplication(job_id=job.id, worker_id=user.nic)
+            user.applied_jobs_count += 1
+            db.add(new_app)
+            db.commit()
+            send_sms(phone_number, f"Successfully applied for {job.title}!", db)
+    
+    else:
+        send_sms(phone_number, "Unknown command. Use REG, Area, Skill, JOB, or APPLY.", db)
+
 # Auth Endpoints
 @app.post("/auth/register", response_model=schemas.User)
 def register_user(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
@@ -119,6 +241,15 @@ def create_job(job: schemas.JobCreate, current_user: models.User = Depends(auth.
     db.add(new_job)
     db.commit()
     db.refresh(new_job)
+
+    # Notification Logic: Notify workers in same area with matching skills
+    workers = db.query(models.User).filter(models.User.ds_area == new_job.area, models.User.is_blocked == 0).all()
+    job_skills = set(new_job.skill_ids_needed or [])
+    for worker in workers:
+        worker_skills = set(worker.skill_ids or [])
+        if not job_skills or worker_skills.intersection(job_skills):
+            send_sms(worker.phone, f"New Job: {new_job.title} in {new_job.area}. Apply using 'APPLY {new_job.id[:4]}'", db)
+
     return map_job_with_apps(new_job)
 
 @app.get("/jobs", response_model=list[schemas.Job])
@@ -274,7 +405,11 @@ def receive_incoming_sms(sms: schemas.SMSMessageCreate, db: Session = Depends(da
     )
     db.add(new_sms)
     db.commit()
-    return {"message": "SMS received and stored"}
+    
+    # Process the command
+    process_sms_command(sms.phone_number, sms.message, db)
+    
+    return {"message": "SMS received and processed"}
 
 @app.get("/sms/pending", response_model=list[schemas.SMSMessage])
 def get_pending_sms(db: Session = Depends(database.get_db)):
