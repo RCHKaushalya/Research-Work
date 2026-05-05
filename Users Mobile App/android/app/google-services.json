@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "741857314469",
+    "project_id": "informal-worker-platform",
+    "storage_bucket": "informal-worker-platform.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:741857314469:android:97dc3e208bbb036dd86f4c",
+        "android_client_info": {
+          "package_name": "com.company.informal"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtZyjw23-drhI1w1pXgOJI_4gxzLGe7gA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

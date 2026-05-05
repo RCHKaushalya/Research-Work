@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/localization_provider.dart';
+import '../services/api_service.dart';
 import 'edit_profile_screen.dart';
 import 'change_pin_screen.dart';
 import 'update_area_screen.dart';
@@ -12,14 +13,33 @@ import 'update_skills_screen.dart';
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({Key? key}) : super(key: key);
 
-  Future<void> _updateProfilePhoto(BuildContext context, AuthProvider auth) async {
+  Future<void> _updateProfilePhoto(
+    BuildContext context,
+    AuthProvider auth,
+  ) async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
-      final updatedUser = auth.currentUser!.copyWith(profilePhotoPath: pickedFile.path);
-      await auth.saveUser(updatedUser);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile photo updated!')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Uploading profile photo...')),
+        );
+      }
+      // Upload the photo to the server
+      final success = await auth.uploadProfilePhoto(pickedFile.path);
+      if (success && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile photo updated successfully!')),
+        );
+      } else if (context.mounted) {
+        // Fallback: save the local file path if server upload fails
+        final updatedUser = auth.currentUser!.copyWith(
+          profilePhotoPath: pickedFile.path,
+        );
+        await auth.saveUser(updatedUser);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile photo saved locally.')),
+        );
       }
     }
   }
@@ -36,7 +56,10 @@ class SettingsScreen extends StatelessWidget {
         title: Text(lp.translate('settingsTab')),
         actions: [
           IconButton(
-            icon: Icon(isSinhala ? Icons.translate : Icons.language, color: Colors.blue),
+            icon: Icon(
+              isSinhala ? Icons.translate : Icons.language,
+              color: Colors.blue,
+            ),
             onPressed: () => lp.setLanguage(isSinhala ? 'ta' : 'si'),
           ),
         ],
@@ -51,12 +74,10 @@ class SettingsScreen extends StatelessWidget {
                 CircleAvatar(
                   radius: 50,
                   backgroundColor: Colors.blue.shade50,
-                  key: ValueKey(user?.profilePhotoPath), // Force rebuild on change
-                  backgroundImage: (user?.profilePhotoPath != null && File(user!.profilePhotoPath!).existsSync()) 
-                      ? FileImage(File(user.profilePhotoPath!)) 
-                      : null,
-                  child: (user?.profilePhotoPath == null || !File(user!.profilePhotoPath!).existsSync()) 
-                      ? const Icon(Icons.person, size: 50, color: Colors.blue) 
+                  key: ValueKey(user?.profilePhotoPath),
+                  backgroundImage: _getImageProvider(user?.profilePhotoPath),
+                  child: user?.profilePhotoPath == null
+                      ? const Icon(Icons.person, size: 50, color: Colors.blue)
                       : null,
                 ),
                 Positioned(
@@ -66,7 +87,11 @@ class SettingsScreen extends StatelessWidget {
                     backgroundColor: Colors.blue,
                     radius: 18,
                     child: IconButton(
-                      icon: const Icon(Icons.camera_alt, size: 18, color: Colors.white),
+                      icon: const Icon(
+                        Icons.camera_alt,
+                        size: 18,
+                        color: Colors.white,
+                      ),
                       onPressed: () => _updateProfilePhoto(context, auth),
                     ),
                   ),
@@ -81,19 +106,28 @@ class SettingsScreen extends StatelessWidget {
             context,
             icon: Icons.person_outline,
             title: lp.translate('editBasicInfo'),
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfileScreen())),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+            ),
           ),
           _buildSettingsTile(
             context,
             icon: Icons.location_on_outlined,
             title: lp.translate('location'),
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const UpdateAreaScreen())),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const UpdateAreaScreen()),
+            ),
           ),
           _buildSettingsTile(
             context,
             icon: Icons.lock_outline,
             title: lp.translate('changePin'),
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChangePinScreen())),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ChangePinScreen()),
+            ),
           ),
 
           const Divider(height: 32),
@@ -102,7 +136,10 @@ class SettingsScreen extends StatelessWidget {
             context,
             icon: Icons.star_outline,
             title: lp.translate('updateSkills'),
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const UpdateSkillsScreen())),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const UpdateSkillsScreen()),
+            ),
           ),
 
           const Divider(height: 32),
@@ -148,6 +185,14 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  ImageProvider? _getImageProvider(String? path) {
+    if (path == null) return null;
+    if (path.startsWith('http')) return NetworkImage(path);
+    if (path.startsWith('uploads/'))
+      return NetworkImage('${ApiService.baseUrl}/$path');
+    return FileImage(File(path));
+  }
+
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
@@ -163,7 +208,13 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSettingsTile(BuildContext context, {required IconData icon, required String title, VoidCallback? onTap, Widget? trailing}) {
+  Widget _buildSettingsTile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    VoidCallback? onTap,
+    Widget? trailing,
+  }) {
     return ListTile(
       leading: Icon(icon, color: Colors.grey.shade700),
       title: Text(title, style: const TextStyle(fontSize: 16)),

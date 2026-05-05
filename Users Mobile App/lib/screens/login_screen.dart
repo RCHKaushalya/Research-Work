@@ -32,7 +32,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (nic.trim().isEmpty || pin.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(context.read<LocalizationProvider>().translate('error')),
+          content: Text(
+            context.read<LocalizationProvider>().translate('error'),
+          ),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -81,10 +83,19 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: Colors.grey.shade200,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    Icons.image,
-                    size: 80,
-                    color: Colors.grey.shade400,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.asset(
+                      'assets/images/login_avatar.jpg',
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Icon(
+                          Icons.image,
+                          size: 80,
+                          color: Colors.grey.shade400,
+                        );
+                      },
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -165,7 +176,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      localizationProvider.translate('dontHaveAccount') ?? 'Don\'t have an account? ',
+                      localizationProvider.translate('dontHaveAccount') ??
+                          'Don\'t have an account? ',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     TextButton(

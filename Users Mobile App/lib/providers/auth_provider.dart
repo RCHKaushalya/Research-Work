@@ -1,8 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/app_user.dart';
-import '../services/api_service.dart';
+import '../services/firebase_service.dart';
 
 class AuthResult {
   const AuthResult({required this.isSuccess, required this.message});
@@ -12,9 +11,6 @@ class AuthResult {
 }
 
 class AuthProvider extends ChangeNotifier {
-  static const String _sessionBoxName = 'session_box';
-  static const String _activeUserNicKey = 'active_user_nic';
-
   AppUser? _currentUser;
   bool _initialized = false;
   bool _busy = false;
@@ -30,38 +26,37 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> init() async {
     try {
-      await Hive.initFlutter();
-      await _openBoxes();
-      await _restoreSession();
+      FirebaseService.auth.authStateChanges().listen((User? user) async {
+        if (user != null) {
+          final email = user.email!;
+          final nic = email.split('@')[0];
+          await _restoreSession(nic);
+        } else {
+          _currentUser = null;
+        }
+        if (!_initialized) {
+          _initialized = true;
+          notifyListeners();
+        } else {
+          notifyListeners();
+        }
+      });
     } catch (error) {
       if (kDebugMode) {
         debugPrint('Auth initialization error: $error');
       }
-    } finally {
       _initialized = true;
       notifyListeners();
     }
   }
 
-  Future<void> _openBoxes() async {
-    if (!Hive.isBoxOpen(_sessionBoxName)) {
-      await Hive.openBox(_sessionBoxName);
-    }
-  }
-
-  Box<dynamic> get _sessionBox => Hive.box(_sessionBoxName);
-
-  Future<void> _restoreSession() async {
-    final token = await ApiService.getToken();
-    if (token == null) return;
-
-    final response = await ApiService.get('/users/me');
-    if (response.statusCode == 200) {
-      final userData = jsonDecode(response.body);
-      // Map backend fields to frontend AppUser model
+  Future<void> _restoreSession(String nic) async {
+    final userData = await FirebaseService.getUserProfile(nic);
+    if (userData != null) {
       _currentUser = _mapBackendUserToAppUser(userData);
     } else {
-      await ApiService.deleteToken();
+      // User is authenticated in Firebase Auth but missing Firestore doc?
+      // Handle edge case if needed, maybe sign out
     }
   }
 
@@ -70,27 +65,11 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await ApiService.post('/auth/login', {
-        'nic': nic.trim().toUpperCase(),
-        'pin': pin.trim(),
-      });
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        await ApiService.saveToken(data['access_token']);
-        
-        // Fetch full profile
-        final profileResponse = await ApiService.get('/users/me');
-        if (profileResponse.statusCode == 200) {
-          _currentUser = _mapBackendUserToAppUser(jsonDecode(profileResponse.body));
-          return const AuthResult(isSuccess: true, message: 'Login successful.');
-        }
-      }
-      
-      return AuthResult(
-        isSuccess: false, 
-        message: _getErrorMessage(response.body),
-      );
+      await FirebaseService.signIn(nic, pin);
+      // authStateChanges listener will handle the rest
+      return const AuthResult(isSuccess: true, message: 'Login successful.');
+    } on FirebaseAuthException catch (e) {
+      return AuthResult(isSuccess: false, message: e.message ?? 'Login failed');
     } catch (e) {
       return AuthResult(isSuccess: false, message: 'Connection error: $e');
     } finally {
@@ -104,9 +83,12 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
     
     try {
-      final response = await ApiService.post('/auth/register', {
+      // 1. Create Auth user
+      await FirebaseService.register(user.nic, user.pin);
+      
+      // 2. Create Firestore profile
+      final userData = {
         'nic': user.nic.toUpperCase(),
-        'pin': user.pin,
         'first_name': user.firstName,
         'last_name': user.lastName,
         'phone': user.phone,
@@ -115,17 +97,22 @@ class AuthProvider extends ChangeNotifier {
         'ds_area': user.dsAreaName ?? '',
         'job_category_ids': user.jobCategoryIds,
         'skill_ids': user.skillIds,
-      });
-
-      if (response.statusCode == 200) {
-        // Auto login after registration
-        return await login(nic: user.nic, pin: user.pin);
-      }
+        'rating': 0.0,
+        'completed_jobs_count': 0,
+        'abandoned_jobs_count': 0,
+        'posted_jobs_count': 0,
+        'applied_jobs_count': 0,
+        'removed_jobs_count': 0,
+        'is_blocked': 0,
+        'availability_status': 'available',
+        'profile_photo_url': null,
+      };
       
-      return AuthResult(
-        isSuccess: false, 
-        message: _getErrorMessage(response.body),
-      );
+      await FirebaseService.saveUserProfile(user.nic, userData);
+      
+      return const AuthResult(isSuccess: true, message: 'Registration successful.');
+    } on FirebaseAuthException catch (e) {
+      return AuthResult(isSuccess: false, message: e.message ?? 'Registration failed');
     } catch (e) {
       return AuthResult(isSuccess: false, message: 'Registration error: $e');
     } finally {
@@ -135,31 +122,28 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<bool> uploadProfilePhoto(String filePath) async {
+    if (_currentUser == null) return false;
     try {
-      final response = await ApiService.uploadFile('/users/me/photo', filePath);
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (_currentUser != null) {
-          // Update local user with photo path from server
-          _currentUser = AppUser(
-            nic: _currentUser!.nic,
-            firstName: _currentUser!.firstName,
-            lastName: _currentUser!.lastName,
-            phone: _currentUser!.phone,
-            pin: _currentUser!.pin,
-            districtName: _currentUser!.districtName,
-            dsAreaName: _currentUser!.dsAreaName,
-            jobCategoryIds: _currentUser!.jobCategoryIds,
-            jobCategoryNames: _currentUser!.jobCategoryNames,
-            skillIds: _currentUser!.skillIds,
-            skillNames: _currentUser!.skillNames,
-            profilePhotoPath: data['profile_photo_path'],
-            rating: _currentUser!.rating,
-            completedJobsCount: _currentUser!.completedJobsCount,
-            abandonedJobsCount: _currentUser!.abandonedJobsCount,
-          );
-          notifyListeners();
-        }
+      final url = await FirebaseService.uploadProfilePhoto(_currentUser!.nic, filePath);
+      if (url != null) {
+        _currentUser = AppUser(
+          nic: _currentUser!.nic,
+          firstName: _currentUser!.firstName,
+          lastName: _currentUser!.lastName,
+          phone: _currentUser!.phone,
+          pin: _currentUser!.pin,
+          districtName: _currentUser!.districtName,
+          dsAreaName: _currentUser!.dsAreaName,
+          jobCategoryIds: _currentUser!.jobCategoryIds,
+          jobCategoryNames: _currentUser!.jobCategoryNames,
+          skillIds: _currentUser!.skillIds,
+          skillNames: _currentUser!.skillNames,
+          profilePhotoPath: url, // using new URL
+          rating: _currentUser!.rating,
+          completedJobsCount: _currentUser!.completedJobsCount,
+          abandonedJobsCount: _currentUser!.abandonedJobsCount,
+        );
+        notifyListeners();
         return true;
       }
     } catch (e) {
@@ -169,62 +153,50 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> saveUser(AppUser user) async {
-    // Update profile on backend
-    final response = await ApiService.put('/users/me', {
+    final data = {
       'first_name': user.firstName,
       'last_name': user.lastName,
       'district': user.districtName,
       'ds_area': user.dsAreaName,
       'job_category_ids': user.jobCategoryIds,
       'skill_ids': user.skillIds,
-    });
+    };
     
-    if (response.statusCode == 200) {
-      _currentUser = _mapBackendUserToAppUser(jsonDecode(response.body));
+    await FirebaseService.saveUserProfile(user.nic, data);
+    
+    // Refresh local copy
+    final userData = await FirebaseService.getUserProfile(user.nic);
+    if (userData != null) {
+      _currentUser = _mapBackendUserToAppUser(userData);
       notifyListeners();
     }
   }
 
   Future<void> logout() async {
-    _currentUser = null;
-    await ApiService.deleteToken();
-    notifyListeners();
+    await FirebaseService.signOut();
   }
 
   AppUser _mapBackendUserToAppUser(Map<String, dynamic> data) {
-    // Backend uses first_name, last_name, ds_area etc.
-    // Frontend AppUser model needs them mapped correctly
     return AppUser(
-      nic: data['nic'],
-      firstName: data['first_name'],
-      lastName: data['last_name'],
-      phone: data['phone'],
-      pin: '', // Pin not returned by backend
-      districtName: data['district'],
-      dsAreaName: data['ds_area'],
+      nic: data['nic'] ?? '',
+      firstName: data['first_name'] ?? '',
+      lastName: data['last_name'] ?? '',
+      phone: data['phone'] ?? '',
+      pin: '', 
+      districtName: data['district'] ?? '',
+      dsAreaName: data['ds_area'] ?? '',
       jobCategoryIds: List<String>.from(data['job_category_ids'] ?? []),
-      jobCategoryNames: [], // Backend could return names or we map from catalog
+      jobCategoryNames: [], 
       skillIds: List<String>.from(data['skill_ids'] ?? []),
       skillNames: [],
-      profilePhotoPath: data['profile_photo_path'],
+      profilePhotoPath: data['profile_photo_url'] ?? data['profile_photo_path'],
       rating: (data['rating'] ?? 0.0).toDouble(),
       completedJobsCount: data['completed_jobs_count'] ?? 0,
       abandonedJobsCount: data['abandoned_jobs_count'] ?? 0,
     );
   }
 
-  String _getErrorMessage(String body) {
-    try {
-      final data = jsonDecode(body);
-      return data['detail'] ?? 'An error occurred.';
-    } catch (_) {
-      return 'An error occurred.';
-    }
-  }
-
-  // To maintain compatibility with some existing UI parts
   AppUser? getUser(String nic) {
-    // For now returning current user if matches or null
     if (_currentUser?.nic == nic) return _currentUser;
     return null;
   }

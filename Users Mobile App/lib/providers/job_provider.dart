@@ -1,8 +1,8 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/job.dart';
 import '../models/app_user.dart';
-import '../services/api_service.dart';
+import '../services/firebase_service.dart';
 
 class JobProvider extends ChangeNotifier {
   List<Job> _jobs = [];
@@ -15,20 +15,24 @@ class JobProvider extends ChangeNotifier {
     fetchJobs();
   }
 
-  Future<void> fetchJobs() async {
+  void fetchJobs() {
     _isLoading = true;
     notifyListeners();
     
-    try {
-      final response = await ApiService.get('/jobs');
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        _jobs = data.map((j) => _mapBackendJobToJob(j)).toList();
-      }
-    } finally {
+    // Listen to all jobs for now (in a real app, you'd paginate or filter)
+    FirebaseService.db.collection('jobs').snapshots().listen((snapshot) {
+      _jobs = snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return _mapBackendJobToJob(data);
+      }).toList();
+      
       _isLoading = false;
       notifyListeners();
-    }
+    }, onError: (e) {
+      _isLoading = false;
+      notifyListeners();
+    });
   }
 
   List<Job> getSuitableJobsForCategories(AppUser? user) {
@@ -39,7 +43,8 @@ class JobProvider extends ChangeNotifier {
     if (userCategoryIds.isEmpty) {
       filtered = _jobs.where((j) => j.status == 'open').toList();
     } else {
-      filtered = _jobs.where((job) => userCategoryIds.contains(job.categoryId) && job.status == 'open').toList();
+      // In the real app, we use area/skills
+      filtered = _jobs.where((job) => job.status == 'open').toList();
     }
 
     filtered.sort((a, b) {
@@ -61,38 +66,16 @@ class JobProvider extends ChangeNotifier {
   }
 
   Future<void> applyToJob(String jobId, String userId) async {
-    final response = await ApiService.post('/jobs/$jobId/apply', {});
-    if (response.statusCode == 200) {
-      final jobIndex = _jobs.indexWhere((j) => j.id == jobId);
-      if (jobIndex != -1) {
-        final job = _jobs[jobIndex];
-        final updatedAppliedIds = List<String>.from(job.appliedWorkerIds)..add(userId);
-        _jobs[jobIndex] = job.copyWith(appliedWorkerIds: updatedAppliedIds);
-        notifyListeners();
-      }
-    }
+    await FirebaseService.applyForJob(jobId, userId);
+    // Realtime listener will automatically update the job list
   }
 
   Future<void> cancelJob(String jobId) async {
-    final response = await ApiService.put('/jobs/$jobId/status', {'status': 'cancelled'});
-    if (response.statusCode == 200) {
-      final jobIndex = _jobs.indexWhere((j) => j.id == jobId);
-      if (jobIndex != -1) {
-        _jobs[jobIndex] = _jobs[jobIndex].copyWith(status: 'cancelled');
-        notifyListeners();
-      }
-    }
+    await FirebaseService.db.collection('jobs').doc(jobId).update({'status': 'cancelled'});
   }
 
   Future<void> completeJob(String jobId) async {
-    final response = await ApiService.put('/jobs/$jobId/status', {'status': 'completed'});
-    if (response.statusCode == 200) {
-      final jobIndex = _jobs.indexWhere((j) => j.id == jobId);
-      if (jobIndex != -1) {
-        _jobs[jobIndex] = _jobs[jobIndex].copyWith(status: 'completed');
-        notifyListeners();
-      }
-    }
+    await FirebaseService.db.collection('jobs').doc(jobId).update({'status': 'completed'});
   }
 
   bool hasApplied(String jobId, String userId) {
@@ -110,34 +93,35 @@ class JobProvider extends ChangeNotifier {
   }
 
   Future<void> addJob(Job job) async {
-    final response = await ApiService.post('/jobs', {
+    final docRef = FirebaseService.db.collection('jobs').doc();
+    await docRef.set({
       'title': job.title,
       'description': job.description,
       'area': job.location,
       'skill_ids_needed': job.requiredSkillIds,
+      'employer_id': job.employerId,
+      'status': 'open',
+      'applied_worker_ids': [],
+      'created_at': FieldValue.serverTimestamp(),
     });
-    
-    if (response.statusCode == 200) {
-      final newJob = _mapBackendJobToJob(jsonDecode(response.body));
-      _jobs.insert(0, newJob);
-      notifyListeners();
-    }
   }
 
   Job _mapBackendJobToJob(Map<String, dynamic> data) {
     return Job(
       id: data['id'],
-      title: data['title'],
-      description: data['description'],
-      employerId: data['employer_id'],
-      employerName: 'User ${data['employer_id'].toString().substring(0, 4)}', // In real app, fetch name or include in API
-      categoryId: '', // Backend should ideally return category_id
+      title: data['title'] ?? '',
+      description: data['description'] ?? '',
+      employerId: data['employer_id'] ?? '',
+      employerName: 'User ${(data['employer_id'] ?? '').toString().length >= 4 ? data['employer_id'].toString().substring(0, 4) : ''}', 
+      categoryId: '', 
       categoryName: '',
-      location: data['area'],
-      status: data['status'],
-      appliedWorkerIds: List<String>.from(data['applied_worker_ids'] ?? []), // Backend needs to return this or fetch apps
+      location: data['area'] ?? '',
+      status: data['status'] ?? 'open',
+      appliedWorkerIds: List<String>.from(data['applied_worker_ids'] ?? []), 
       requiredSkillIds: List<String>.from(data['skill_ids_needed'] ?? []),
-      createdAt: DateTime.parse(data['created_at']),
+      createdAt: data['created_at'] != null 
+          ? (data['created_at'] is Timestamp ? (data['created_at'] as Timestamp).toDate() : DateTime.now()) 
+          : DateTime.now(),
     );
   }
 }
