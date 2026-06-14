@@ -3,6 +3,7 @@ Backend/.venv/
 Backend/__pycache__/
 Backend/*.db
 Backend/uploads/
+Backend/.env
 
 # Flutter
 Users Mobile App/.dart_tool/
@@ -18,3 +19,9 @@ Users Mobile App/android/app/src/main/res/mipmap-*/
 # OS
 .DS_Store
 Thumbs.db
+
+# Standalone envs
+Employee Management System/.env
+
+# Untracked build/junk paths
+SMS Gateway/

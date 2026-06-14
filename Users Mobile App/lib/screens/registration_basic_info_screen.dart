@@ -73,11 +73,7 @@ class _RegistrationBasicInfoScreenState
     return Consumer<LocalizationProvider>(
       builder: (context, lp, _) {
         return Scaffold(
-          appBar: AppBar(
-            title: Text(
-              lp.translate('basicInformation'),
-            ),
-          ),
+          appBar: AppBar(title: Text(lp.translate('basicInformation'))),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Form(
@@ -185,9 +181,7 @@ class _RegistrationBasicInfoScreenState
                               height: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : Text(
-                              lp.translate('nextButton'),
-                            ),
+                          : Text(lp.translate('nextButton')),
                     ),
                   ),
                 ],

@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/job.dart';
+
 import '../models/app_user.dart';
-import '../services/firebase_service.dart';
+import '../models/job.dart';
+import '../services/supabase_service.dart';
 
 class JobProvider extends ChangeNotifier {
   List<Job> _jobs = [];
@@ -15,35 +15,38 @@ class JobProvider extends ChangeNotifier {
     fetchJobs();
   }
 
-  void fetchJobs() {
+  Future<void> fetchJobs() async {
     _isLoading = true;
     notifyListeners();
-    
-    // Listen to all jobs for now (in a real app, you'd paginate or filter)
-    FirebaseService.db.collection('jobs').snapshots().listen((snapshot) {
-      _jobs = snapshot.docs.map((doc) {
-        final data = doc.data();
-        data['id'] = doc.id;
-        return _mapBackendJobToJob(data);
-      }).toList();
-      
+
+    if (!SupabaseService.isConfigured) {
+      _jobs = [];
       _isLoading = false;
       notifyListeners();
-    }, onError: (e) {
-      _isLoading = false;
-      notifyListeners();
-    });
+      return;
+    }
+
+    try {
+      _jobs = await SupabaseService.fetchJobs();
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Supabase job fetch error: $e');
+      }
+      _jobs = [];
+    }
+
+    _isLoading = false;
+    notifyListeners();
   }
 
   List<Job> getSuitableJobsForCategories(AppUser? user) {
     if (user == null) return _jobs;
     final userCategoryIds = user.jobCategoryIds;
-    
+
     List<Job> filtered;
     if (userCategoryIds.isEmpty) {
       filtered = _jobs.where((j) => j.status == 'open').toList();
     } else {
-      // In the real app, we use area/skills
       filtered = _jobs.where((job) => job.status == 'open').toList();
     }
 
@@ -66,16 +69,71 @@ class JobProvider extends ChangeNotifier {
   }
 
   Future<void> applyToJob(String jobId, String userId) async {
-    await FirebaseService.applyForJob(jobId, userId);
-    // Realtime listener will automatically update the job list
+    if (!SupabaseService.isConfigured) {
+      return;
+    }
+
+    await SupabaseService.applyForJob(jobId, userId);
+    await fetchJobs();
+  }
+
+  Future<void> startJob(String jobId) async {
+    await _updateJob(jobId, {'status': 'in_progress'});
   }
 
   Future<void> cancelJob(String jobId) async {
-    await FirebaseService.db.collection('jobs').doc(jobId).update({'status': 'cancelled'});
+    await _updateJob(jobId, {'status': 'cancelled'});
   }
 
   Future<void> completeJob(String jobId) async {
-    await FirebaseService.db.collection('jobs').doc(jobId).update({'status': 'completed'});
+    await _updateJob(jobId, {'status': 'completed'});
+  }
+
+  Future<void> acceptWorker(String jobId, String workerId) async {
+    final job = await SupabaseService.getJobDetails(jobId);
+    if (job == null) {
+      return;
+    }
+
+    final acceptedWorkerIds = List<String>.from(
+      job['accepted_worker_ids'] ?? [],
+    );
+    final appliedWorkerIds = List<String>.from(job['applied_worker_ids'] ?? []);
+    if (!acceptedWorkerIds.contains(workerId)) {
+      acceptedWorkerIds.add(workerId);
+    }
+    appliedWorkerIds.remove(workerId);
+
+    await _updateJob(jobId, {
+      'accepted_worker_ids': acceptedWorkerIds,
+      'applied_worker_ids': appliedWorkerIds,
+    });
+  }
+
+  Future<void> removeWorker(String jobId, String workerId) async {
+    final job = await SupabaseService.getJobDetails(jobId);
+    if (job == null) {
+      return;
+    }
+
+    final acceptedWorkerIds = List<String>.from(
+      job['accepted_worker_ids'] ?? [],
+    );
+    acceptedWorkerIds.remove(workerId);
+
+    await _updateJob(jobId, {'accepted_worker_ids': acceptedWorkerIds});
+  }
+
+  Future<void> rejectWorker(String jobId, String workerId) async {
+    final job = await SupabaseService.getJobDetails(jobId);
+    if (job == null) {
+      return;
+    }
+
+    final appliedWorkerIds = List<String>.from(job['applied_worker_ids'] ?? []);
+    appliedWorkerIds.remove(workerId);
+
+    await _updateJob(jobId, {'applied_worker_ids': appliedWorkerIds});
   }
 
   bool hasApplied(String jobId, String userId) {
@@ -93,35 +151,42 @@ class JobProvider extends ChangeNotifier {
   }
 
   Future<void> addJob(Job job) async {
-    final docRef = FirebaseService.db.collection('jobs').doc();
-    await docRef.set({
-      'title': job.title,
-      'description': job.description,
-      'area': job.location,
-      'skill_ids_needed': job.requiredSkillIds,
-      'employer_id': job.employerId,
-      'status': 'open',
-      'applied_worker_ids': [],
-      'created_at': FieldValue.serverTimestamp(),
-    });
+    if (!SupabaseService.isConfigured) {
+      return;
+    }
+
+    await SupabaseService.createJob(job);
+    await fetchJobs();
   }
 
-  Job _mapBackendJobToJob(Map<String, dynamic> data) {
-    return Job(
-      id: data['id'],
-      title: data['title'] ?? '',
-      description: data['description'] ?? '',
-      employerId: data['employer_id'] ?? '',
-      employerName: 'User ${(data['employer_id'] ?? '').toString().length >= 4 ? data['employer_id'].toString().substring(0, 4) : ''}', 
-      categoryId: '', 
-      categoryName: '',
-      location: data['area'] ?? '',
-      status: data['status'] ?? 'open',
-      appliedWorkerIds: List<String>.from(data['applied_worker_ids'] ?? []), 
-      requiredSkillIds: List<String>.from(data['skill_ids_needed'] ?? []),
-      createdAt: data['created_at'] != null 
-          ? (data['created_at'] is Timestamp ? (data['created_at'] as Timestamp).toDate() : DateTime.now()) 
-          : DateTime.now(),
-    );
+  Future<void> addPayment(String jobId, JobPayment payment) async {
+    if (!SupabaseService.isConfigured) {
+      return;
+    }
+
+    final job = await SupabaseService.getJobDetails(jobId);
+    if (job == null) {
+      return;
+    }
+
+    final payments = <Map<String, dynamic>>[
+      ...List<Map<String, dynamic>>.from(
+        (job['payments'] as List? ?? []).map(
+          (paymentData) => Map<String, dynamic>.from(paymentData as Map),
+        ),
+      ),
+      payment.toMap(),
+    ];
+
+    await _updateJob(jobId, {'payments': payments});
+  }
+
+  Future<void> _updateJob(String jobId, Map<String, dynamic> changes) async {
+    if (!SupabaseService.isConfigured) {
+      return;
+    }
+
+    await SupabaseService.client.from('jobs').update(changes).eq('id', jobId);
+    await fetchJobs();
   }
 }

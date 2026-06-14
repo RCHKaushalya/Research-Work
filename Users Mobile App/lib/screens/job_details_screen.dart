@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/job.dart';
+import '../models/app_user.dart';
 import '../providers/auth_provider.dart';
 import '../providers/job_provider.dart';
+import '../providers/chat_provider.dart';
 import '../providers/localization_provider.dart';
 import 'candidate_profile_screen.dart';
+import 'review_workers_screen.dart';
+import 'chat_screen.dart';
 
 class JobDetailsScreen extends StatelessWidget {
   final Job job;
@@ -19,28 +23,24 @@ class JobDetailsScreen extends StatelessWidget {
         if (user == null) return Scaffold(body: Center(child: Text(localizationProvider.translate('error'))));
 
         final isEmployer = job.employerId == user.nic;
+        final currentJob = jobProvider.jobs.firstWhere((j) => j.id == job.id, orElse: () => job);
         final hasApplied = jobProvider.hasApplied(job.id, user.nic);
         final matchScore = jobProvider.getMatchScore(job, user);
-        final currentJob = jobProvider.jobs.firstWhere((j) => j.id == job.id, orElse: () => job);
 
         return Scaffold(
           appBar: AppBar(
             title: Text(isEmployer ? localizationProvider.translate('jobTab') : localizationProvider.translate('publicProfile')),
             actions: [
-              if (isEmployer && currentJob.status == 'open')
+              if (isEmployer && (currentJob.status == 'open' || currentJob.status == 'in_progress'))
                 PopupMenuButton<String>(
-                  onSelected: (val) {
+                  onSelected: (val) async {
                     if (val == 'cancel') {
                       jobProvider.cancelJob(job.id);
-                      Navigator.pop(context);
-                    } else if (val == 'complete') {
-                      jobProvider.completeJob(job.id);
                       Navigator.pop(context);
                     }
                   },
                   itemBuilder: (context) => [
-                    const PopupMenuItem(value: 'complete', child: Text('Mark as Completed')),
-                    const PopupMenuItem(value: 'cancel', child: Text('Cancel Job')),
+                    PopupMenuItem(value: 'cancel', child: Text(localizationProvider.translate('cancelJob'))),
                   ],
                 ),
             ],
@@ -56,7 +56,9 @@ class JobDetailsScreen extends StatelessWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.all(32),
                     decoration: BoxDecoration(
-                      color: currentJob.status == 'cancelled' ? Colors.red.shade600 : (currentJob.status == 'completed' ? Colors.green.shade600 : Colors.blue.shade600),
+                      color: currentJob.status == 'cancelled' ? Colors.red.shade600 : 
+                            (currentJob.status == 'completed' ? Colors.green.shade600 : 
+                            (currentJob.status == 'in_progress' ? Colors.orange.shade600 : Colors.blue.shade600)),
                       borderRadius: const BorderRadius.only(
                         bottomLeft: Radius.circular(32),
                         bottomRight: Radius.circular(32),
@@ -83,6 +85,88 @@ class JobDetailsScreen extends StatelessWidget {
                           '${currentJob.status.toUpperCase()} - ${job.employerName}',
                           style: const TextStyle(color: Colors.white70, fontSize: 16),
                         ),
+                        if (isEmployer) ...[
+                          const SizedBox(height: 24),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            alignment: WrapAlignment.center,
+                            children: [
+                              if (currentJob.status == 'open' && currentJob.acceptedWorkerIds.isNotEmpty)
+                                ElevatedButton.icon(
+                                  onPressed: () => jobProvider.startJob(job.id),
+                                  icon: const Icon(Icons.play_arrow),
+                                  label: Text(localizationProvider.translate('markInProgress').toUpperCase()),
+                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.orange.shade700),
+                                ),
+                              if (currentJob.status == 'in_progress' || (currentJob.status == 'open' && currentJob.acceptedWorkerIds.isNotEmpty))
+                                ElevatedButton.icon(
+                                  onPressed: () async {
+                                    final workers = await authProvider.getUsers(currentJob.acceptedWorkerIds);
+                                    if (context.mounted) {
+                                      Navigator.push(context, MaterialPageRoute(builder: (_) => ReviewWorkersScreen(job: currentJob, workers: workers)));
+                                    }
+                                  },
+                                  icon: const Icon(Icons.check),
+                                  label: Text(localizationProvider.translate('markCompleted').toUpperCase()),
+                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.green.shade700),
+                                ),
+                              if (currentJob.acceptedWorkerIds.isNotEmpty)
+                                ElevatedButton.icon(
+                                  onPressed: () async {
+                                    final chatProvider = context.read<ChatProvider>();
+                                    final chatId = await chatProvider.getOrCreateGroupChat(
+                                      currentJob.id, 
+                                      [user.nic, ...currentJob.acceptedWorkerIds],
+                                      currentJob.title
+                                    );
+                                    if (context.mounted) {
+                                      Navigator.push(context, MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId, title: '${currentJob.title} (Group)')));
+                                    }
+                                  },
+                                  icon: const Icon(Icons.group),
+                                  label: Text(localizationProvider.translate('openGroupChat').toUpperCase()),
+                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue.shade900, foregroundColor: Colors.white),
+                                ),
+                            ],
+                          ),
+                        ] else if (currentJob.acceptedWorkerIds.contains(user.nic)) ...[
+                           const SizedBox(height: 16),
+                           Row(
+                             mainAxisAlignment: MainAxisAlignment.center,
+                             children: [
+                               ElevatedButton.icon(
+                                onPressed: () async {
+                                  final chatProvider = context.read<ChatProvider>();
+                                  final chatId = await chatProvider.getOrCreateDirectChat(user.nic, currentJob.employerId);
+                                  if (context.mounted) {
+                                    Navigator.push(context, MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId, title: '${localizationProvider.translate('messageTab')} - Employer')));
+                                  }
+                                },
+                                icon: const Icon(Icons.message),
+                                label: Text(localizationProvider.translate('messageWorker').toUpperCase()), // Using messageWorker key for consistency
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.blue.shade700),
+                              ),
+                              const SizedBox(width: 8),
+                              ElevatedButton.icon(
+                                onPressed: () async {
+                                  final chatProvider = context.read<ChatProvider>();
+                                  final chatId = await chatProvider.getOrCreateGroupChat(
+                                    currentJob.id, 
+                                    [currentJob.employerId, ...currentJob.acceptedWorkerIds],
+                                    currentJob.title
+                                  );
+                                  if (context.mounted) {
+                                    Navigator.push(context, MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId, title: '${currentJob.title} (Group)')));
+                                  }
+                                },
+                                icon: const Icon(Icons.group),
+                                label: Text(localizationProvider.translate('openGroupChat').toUpperCase()),
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.blue.shade900, foregroundColor: Colors.white),
+                              ),
+                             ],
+                           ),
+                        ],
                       ],
                     ),
                   ),
@@ -130,9 +214,32 @@ class JobDetailsScreen extends StatelessWidget {
                       _buildDetailRow(Icons.category, localizationProvider.translate('jobCategory'), job.categoryName),
                       
                       const SizedBox(height: 32),
-                      Text(localizationProvider.translate('jobDescription'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 12),
                       Text(job.description, style: const TextStyle(fontSize: 16, height: 1.5)),
+                      
+                      const SizedBox(height: 32),
+                      Text(localizationProvider.translate('salaryLog'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 12),
+                      if (currentJob.payments.isEmpty)
+                        Text(localizationProvider.translate('noJobsFound'), style: const TextStyle(color: Colors.grey))
+                      else
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: currentJob.payments.length,
+                          itemBuilder: (context, index) {
+                            final payment = currentJob.payments[index];
+                            return ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: const Icon(Icons.payment, color: Colors.green),
+                              title: Text('Rs. ${payment.amount}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                              subtitle: Text('${payment.date.day}/${payment.date.month} - ${payment.note ?? ""}', style: const TextStyle(fontSize: 12)),
+                              trailing: FutureBuilder<AppUser?>(
+                                future: authProvider.getUsers([payment.workerId]).then((list) => list.isNotEmpty ? list.first : null),
+                                builder: (context, snap) => Text(snap.data?.firstName ?? localizationProvider.translate('workerStats'), style: const TextStyle(fontSize: 12)),
+                              ),
+                            );
+                          },
+                        ),
 
                       const SizedBox(height: 40),
 
@@ -145,23 +252,109 @@ class JobDetailsScreen extends StatelessWidget {
                           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 16),
-                        if (job.appliedWorkerIds.isEmpty)
-                          const Center(child: Text('No applicants yet.'))
+                        if (job.appliedWorkerIds.isEmpty && job.acceptedWorkerIds.isEmpty)
+                          Center(child: Text(localizationProvider.translate('noJobsFound')))
                         else
-                          ListView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: job.appliedWorkerIds.length,
-                            itemBuilder: (context, index) {
-                              final nic = job.appliedWorkerIds[index];
-                              final applicant = authProvider.getUser(nic);
-                              if (applicant == null) return const SizedBox();
-                              return ListTile(
-                                leading: const CircleAvatar(child: Icon(Icons.person)),
-                                title: Text(applicant.fullName),
-                                subtitle: Text(applicant.skillNames.take(2).join(', ')),
-                                trailing: const Icon(Icons.chevron_right),
-                                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CandidateProfileScreen(user: applicant))),
+                          FutureBuilder<List<AppUser>>(
+                            future: authProvider.getUsers([...job.appliedWorkerIds, ...job.acceptedWorkerIds]),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState == ConnectionState.waiting) {
+                                return const Center(child: CircularProgressIndicator());
+                              }
+                              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                                return Center(child: Text(localizationProvider.translate('error')));
+                              }
+                              
+                              final applicants = snapshot.data!;
+                              return ListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: applicants.length,
+                                itemBuilder: (context, index) {
+                                  final applicant = applicants[index];
+                                  final isAccepted = currentJob.acceptedWorkerIds.contains(applicant.nic);
+                                  
+                                  return Card(
+                                    margin: const EdgeInsets.symmetric(vertical: 4),
+                                    child: ListTile(
+                                      leading: CircleAvatar(
+                                        backgroundImage: applicant.profilePhotoPath != null
+                                          ? NetworkImage(applicant.profilePhotoPath!)
+                                          : null,
+                                        child: applicant.profilePhotoPath == null ? const Icon(Icons.person) : null,
+                                      ),
+                                      title: Text(applicant.fullName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                      subtitle: Row(
+                                        children: [
+                                          const Icon(Icons.star, color: Colors.orange, size: 14),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            '${applicant.rating} (${applicant.reviews.length})',
+                                            style: const TextStyle(fontSize: 12),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(child: Text(applicant.skillNames.take(2).join(', '), overflow: TextOverflow.ellipsis)),
+                                        ],
+                                      ),
+                                      trailing: isAccepted
+                                          ? Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Chip(
+                                                  label: Text(localizationProvider.translate('accepted'), style: const TextStyle(color: Colors.white, fontSize: 10)),
+                                                  backgroundColor: Colors.green,
+                                                ),
+                                                if (currentJob.status == 'open' || currentJob.status == 'in_progress') ...[
+                                                  IconButton(
+                                                    icon: const Icon(Icons.message, color: Colors.blue, size: 20),
+                                                    tooltip: localizationProvider.translate('messageWorker'),
+                                                    onPressed: () async {
+                                                      final chatProvider = context.read<ChatProvider>();
+                                                      final chatId = await chatProvider.getOrCreateDirectChat(user.nic, applicant.nic);
+                                                      if (context.mounted) {
+                                                        Navigator.push(context, MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId, title: '${localizationProvider.translate('messageTab')} - ${applicant.firstName}')));
+                                                      }
+                                                    },
+                                                  ),
+                                                  IconButton(
+                                                    icon: const Icon(Icons.payments, color: Colors.green, size: 20),
+                                                    tooltip: localizationProvider.translate('logPayment'),
+                                                    onPressed: () => _showPaymentDialog(context, jobProvider, currentJob.id, applicant),
+                                                  ),
+                                                  IconButton(
+                                                    icon: const Icon(Icons.person_remove, color: Colors.red, size: 20),
+                                                    tooltip: localizationProvider.translate('removeWorker'),
+                                                    onPressed: () {
+                                                      jobProvider.removeWorker(currentJob.id, applicant.nic);
+                                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${localizationProvider.translate('removed')} ${applicant.firstName}')));
+                                                    },
+                                                  ),
+                                                ],
+                                              ],
+                                            )
+                                          : Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                IconButton(
+                                                  icon: const Icon(Icons.check_circle, color: Colors.green),
+                                                  onPressed: () {
+                                                    jobProvider.acceptWorker(currentJob.id, applicant.nic);
+                                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${localizationProvider.translate('accepted')} ${applicant.firstName}')));
+                                                  },
+                                                ),
+                                                IconButton(
+                                                  icon: const Icon(Icons.cancel, color: Colors.red),
+                                                  onPressed: () {
+                                                    jobProvider.rejectWorker(currentJob.id, applicant.nic);
+                                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${localizationProvider.translate('cancel')} ${applicant.firstName}')));
+                                                  },
+                                                ),
+                                              ],
+                                            ),
+                                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CandidateProfileScreen(user: applicant))),
+                                    ),
+                                  );
+                                },
                               );
                             },
                           ),
@@ -215,6 +408,55 @@ class JobDetailsScreen extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+
+  void _showPaymentDialog(BuildContext context, JobProvider jobProvider, String jobId, AppUser worker) {
+    final amountController = TextEditingController();
+    final noteController = TextEditingController();
+    final lp = context.read<LocalizationProvider>();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('${lp.translate('logPayment')} - ${worker.firstName}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: amountController,
+              decoration: InputDecoration(labelText: lp.translate('amount')),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: noteController,
+              decoration: InputDecoration(labelText: lp.translate('note')),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(lp.translate('cancel'))),
+          ElevatedButton(
+            onPressed: () {
+              final amount = double.tryParse(amountController.text) ?? 0;
+              if (amount > 0) {
+                jobProvider.addPayment(
+                  jobId,
+                  JobPayment(
+                    workerId: worker.nic,
+                    amount: amount,
+                    date: DateTime.now(),
+                    note: noteController.text.isNotEmpty ? noteController.text : null,
+                  ),
+                );
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(lp.translate('success'))));
+              }
+            },
+            child: Text(lp.translate('logPayment')),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workforce Platform Admin</title>
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <div id="login-container" class="container">
+        <div class="card login-card">
+            <h1>Admin Login</h1>
+            <p>Enter your 6-digit security PIN</p>
+            <div class="input-group">
+                <input type="password" id="pin-input" maxlength="6" placeholder="••••••">
+            </div>
+            <button id="login-btn" class="btn primary">Login</button>
+            <p id="error-msg" class="error"></p>
+        </div>
+    </div>
+
+    <div id="dashboard-container" class="container hidden">
+        <nav>
+            <div class="nav-content">
+                <h2>Workforce Admin</h2>
+                <div class="nav-actions">
+                    <span id="admin-name">Admin Dashboard</span>
+                    <button id="logout-btn" class="btn outline">Logout</button>
+                </div>
+            </div>
+        </nav>
+
+        <main>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="label">Total Users</span>
+                    <span id="stat-users" class="value">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="label">Total Jobs</span>
+                    <span id="stat-jobs" class="value">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="label">Applications</span>
+                    <span id="stat-apps" class="value">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="label">Total Revenue</span>
+                    <span id="stat-revenue" class="value">Rs. 0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="label">SMS Logs</span>
+                    <span id="stat-sms" class="value">0</span>
+                </div>
+            </div>
+
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="users-tab">Users</button>
+                <button class="tab-btn" data-tab="jobs-tab">Jobs</button>
+                <button class="tab-btn" data-tab="apps-tab">Applications</button>
+                <button class="tab-btn" data-tab="financial-tab">Financials</button>
+                <button class="tab-btn" data-tab="sms-tab">SMS Gateway</button>
+            </div>
+
+            <div id="users-tab" class="tab-content active">
+                <div class="card table-card">
+                    <div class="card-header-actions">
+                        <h3>Registered Workers</h3>
+                        <div class="header-btns">
+                            <button class="btn primary-sm" onclick="openUserModal()">+ Add User</button>
+                            <div class="broadcast-form">
+                                <input type="text" id="broadcast-msg" placeholder="Broadcast message to all users..." style="font-size: 14px; width: 300px; padding: 8px; margin-right: 8px; letter-spacing: normal;">
+                                <button id="broadcast-btn" class="btn primary-sm">Send Broadcast</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-scroll">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Worker</th>
+                                    <th>Phone</th>
+                                    <th>Location</th>
+                                    <th>Rating</th>
+                                    <th>Verification</th>
+                                    <th>Job Stats</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body">
+                                <!-- Data injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="jobs-tab" class="tab-content">
+                <div class="card table-card">
+                    <div class="card-header-actions">
+                        <h3>Platform Jobs</h3>
+                        <button class="btn primary-sm" onclick="openJobModal()">+ Add Job</button>
+                    </div>
+                    <div class="table-scroll">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Employer</th>
+                                    <th>Area</th>
+                                    <th>Status</th>
+                                    <th>Apps</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="jobs-table-body">
+                                <!-- Data injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="financial-tab" class="tab-content">
+                <div class="card table-card">
+                    <div class="card-header-actions">
+                        <h3>Platform Financial Logs</h3>
+                        <div id="total-revenue-badge" class="badge open">Total: Rs. 0</div>
+                    </div>
+                    <div class="table-scroll">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Job ID</th>
+                                    <th>Worker</th>
+                                    <th>Amount</th>
+                                    <th>Note</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="financial-table-body">
+                                <!-- Data injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="apps-tab" class="tab-content">
+                <div class="card table-card">
+                    <h3>Recent Applications</h3>
+                    <div class="table-scroll">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Job Title</th>
+                                    <th>Worker NIC</th>
+                                    <th>Applied At</th>
+                                </tr>
+                            </thead>
+                            <tbody id="apps-table-body">
+                                <!-- Data injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="sms-tab" class="tab-content">
+                <div class="card table-card">
+                    <div class="card-header-actions">
+                        <h3>SMS Gateway Logs</h3>
+                        <button id="queue-sms-btn" class="btn primary-sm">Queue Test SMS</button>
+                    </div>
+                    <div class="table-scroll">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Phone Number</th>
+                                    <th>Message</th>
+                                    <th>Direction</th>
+                                    <th>Status</th>
+                                    <th>Created At</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sms-table-body">
+                                <!-- Data injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- User Modal -->
+    <div id="user-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h3 id="user-modal-title">Add/Edit User</h3>
+            <form id="user-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>NIC (Unique ID)</label>
+                        <input type="text" id="u-nic" required placeholder="e.g. 199512345678">
+                    </div>
+                    <div class="form-group">
+                        <label>First Name</label>
+                        <input type="text" id="u-first" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Last Name</label>
+                        <input type="text" id="u-last" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone</label>
+                        <input type="text" id="u-phone" required>
+                    </div>
+                    <div class="form-group">
+                        <label>District</label>
+                        <input type="text" id="u-district">
+                    </div>
+                    <div class="form-group">
+                        <label>DS Area</label>
+                        <input type="text" id="u-ds">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn outline" onclick="closeModals()">Cancel</button>
+                    <button type="submit" class="btn primary">Save User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Job Modal -->
+    <div id="job-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h3 id="job-modal-title">Add/Edit Job</h3>
+            <form id="job-form">
+                <div class="form-group">
+                    <label>Job Title</label>
+                    <input type="text" id="j-title" required style="letter-spacing: normal; font-size: 16px; text-align: left;">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="j-desc" rows="3" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border);"></textarea>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Employer ID (NIC)</label>
+                        <input type="text" id="j-employer" required style="letter-spacing: normal; font-size: 16px; text-align: left;">
+                    </div>
+                    <div class="form-group">
+                        <label>Location (Area)</label>
+                        <input type="text" id="j-area" required style="letter-spacing: normal; font-size: 16px; text-align: left;">
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="j-status" style="width: 100%; padding: 10px; border-radius: 8px;">
+                            <option value="open">Open</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn outline" onclick="closeModals()">Cancel</button>
+                    <button type="submit" class="btn primary">Save Job</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Supabase JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script src="admin.js"></script>
+</body>
+</html>

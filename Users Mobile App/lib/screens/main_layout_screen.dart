@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'dashboard_screen.dart';
 import 'jobs_screen.dart';
 import 'messages_screen.dart';
+import 'chatbot_screen.dart';
 import 'profile_screen.dart';
 import 'settings_screen.dart';
 import '../providers/alerts_provider.dart';
@@ -23,6 +24,7 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
     DashboardScreen(),
     JobsScreen(),
     MessagesScreen(), // Contains Search as a sub-tab
+    ChatbotScreen(),
     ProfileScreen(),
     SettingsScreen(),
   ];
@@ -40,10 +42,7 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
     final unreadCount = alertsProvider.unreadCount;
 
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: _onTabTapped,
@@ -70,6 +69,11 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
                 : const Icon(Icons.message_outlined),
             activeIcon: const Icon(Icons.message),
             label: lp.translate('messageTab'),
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.smart_toy_outlined),
+            activeIcon: const Icon(Icons.smart_toy),
+            label: lp.translate('chatbotTab'),
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.person_outline),

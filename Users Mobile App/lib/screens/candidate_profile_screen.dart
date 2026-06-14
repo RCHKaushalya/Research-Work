@@ -76,7 +76,7 @@ class CandidateProfileScreen extends StatelessWidget {
                   lp.translate('completedJobs'),
                   user.completedJobsCount.toString(),
                 ),
-                _buildStat(lp.translate('rank'), 'Level 2'),
+                _buildStat(lp.translate('rank'), lp.translate('level2')),
                 _buildStat(
                   lp.translate('reviews'),
                   user.reviews.length.toString(),
@@ -162,6 +162,78 @@ class CandidateProfileScreen extends StatelessWidget {
                   );
                 }).toList(),
               ),
+            ]),
+
+            const SizedBox(height: 32),
+
+            // Reviews Section
+            _buildSection(context, lp.translate('reviews'), [
+              if (user.reviews.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Center(
+                    child: Text(
+                      lp.translate('noReviews'),
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                )
+              else
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: user.reviews.length,
+                  itemBuilder: (context, index) {
+                    final review = user.reviews[index];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      elevation: 0,
+                      color: Colors.grey.shade50,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: Colors.grey.shade200),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  review.authorName,
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                Row(
+                                  children: List.generate(5, (star) {
+                                    return Icon(
+                                      star < review.rating ? Icons.star : Icons.star_border,
+                                      size: 14,
+                                      color: Colors.orange,
+                                    );
+                                  }),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${review.date.day}/${review.date.month}/${review.date.year}',
+                              style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+                            ),
+                            if (review.comment.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                review.comment,
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
             ]),
 
             const SizedBox(height: 40),

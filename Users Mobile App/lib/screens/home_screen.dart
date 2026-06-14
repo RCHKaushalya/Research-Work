@@ -47,6 +47,10 @@ class HomeScreen extends StatelessWidget {
                             value: 'ta',
                             child: Text('தமிழ்'),
                           ),
+                          const PopupMenuItem(
+                            value: 'en',
+                            child: Text('English'),
+                          ),
                         ],
                     child: Container(
                       padding: const EdgeInsets.symmetric(
@@ -227,7 +231,8 @@ class HomeScreen extends StatelessWidget {
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const MainLayoutScreen(),
+                                  builder: (context) =>
+                                      const MainLayoutScreen(),
                                 ),
                               );
                             },
@@ -258,4 +263,3 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
-

@@ -4,7 +4,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/localization_provider.dart';
-import '../services/api_service.dart';
 import 'edit_profile_screen.dart';
 import 'change_pin_screen.dart';
 import 'update_area_screen.dart';
@@ -49,18 +48,18 @@ class SettingsScreen extends StatelessWidget {
     final lp = context.watch<LocalizationProvider>();
     final auth = context.watch<AuthProvider>();
     final user = auth.currentUser;
-    final isSinhala = lp.currentLocale.languageCode == 'si';
-
     return Scaffold(
       appBar: AppBar(
         title: Text(lp.translate('settingsTab')),
         actions: [
-          IconButton(
-            icon: Icon(
-              isSinhala ? Icons.translate : Icons.language,
-              color: Colors.blue,
-            ),
-            onPressed: () => lp.setLanguage(isSinhala ? 'ta' : 'si'),
+          PopupMenuButton<String>(
+            onSelected: lp.setLanguage,
+            itemBuilder: (context) => const [
+              PopupMenuItem(value: 'si', child: Text('සිංහල')),
+              PopupMenuItem(value: 'ta', child: Text('தமிழ்')),
+              PopupMenuItem(value: 'en', child: Text('English')),
+            ],
+            icon: const Icon(Icons.language, color: Colors.blue),
           ),
         ],
       ),
@@ -188,8 +187,6 @@ class SettingsScreen extends StatelessWidget {
   ImageProvider? _getImageProvider(String? path) {
     if (path == null) return null;
     if (path.startsWith('http')) return NetworkImage(path);
-    if (path.startsWith('uploads/'))
-      return NetworkImage('${ApiService.baseUrl}/$path');
     return FileImage(File(path));
   }
 

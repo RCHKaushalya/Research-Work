@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workforce Volunteer Panel</title>
+    <link rel="stylesheet" href="volunteer.css">
+</head>
+<body>
+    <div id="login-view" class="shell shell-login">
+        <div class="hero-card">
+            <div class="hero-copy">
+                <span class="eyebrow">Volunteer Support</span>
+                <h1>Verify workers, answer support queries, and keep registrations moving.</h1>
+                <p>Approve pending users from SMS or registration flows and respond to support messages without leaving the panel.</p>
+            </div>
+            <div class="login-card card">
+                <h2>Volunteer Login</h2>
+                <p>Enter the volunteer PIN to continue.</p>
+                <label for="pin-input">Volunteer PIN</label>
+                <input id="pin-input" type="password" maxlength="6" placeholder="••••••" />
+                <button id="login-btn" class="button primary">Enter Panel</button>
+                <p id="error-msg" class="error"></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="panel-view" class="shell hidden">
+        <header class="topbar card">
+            <div>
+                <span class="eyebrow">Workforce Platform</span>
+                <h2>Volunteer Panel</h2>
+            </div>
+            <div class="topbar-actions">
+                <span id="pending-count-pill" class="pill">0 pending</span>
+                <button id="refresh-btn" class="button subtle">Refresh</button>
+                <button id="logout-btn" class="button outline">Logout</button>
+            </div>
+        </header>
+
+        <section class="stats-grid">
+            <div class="stat card">
+                <span class="label">Pending Registrations</span>
+                <strong id="stat-pending">0</strong>
+            </div>
+            <div class="stat card">
+                <span class="label">Verified Today</span>
+                <strong id="stat-verified">0</strong>
+            </div>
+            <div class="stat card">
+                <span class="label">Support Queries</span>
+                <strong id="stat-support">0</strong>
+            </div>
+        </section>
+
+        <section class="tabs card">
+            <button class="tab-btn active" data-tab="pending-tab">Pending Registrations</button>
+            <button class="tab-btn" data-tab="support-tab">Support Queries</button>
+        </section>
+
+        <main>
+            <section id="pending-tab" class="tab-panel active">
+                <div class="panel-head">
+                    <div>
+                        <h3>Pending Worker Registrations</h3>
+                        <p>Approve workers who have submitted details via the app or SMS.</p>
+                    </div>
+                </div>
+                <div id="pending-list" class="cards-grid"></div>
+            </section>
+
+            <section id="support-tab" class="tab-panel">
+                <div class="panel-head">
+                    <div>
+                        <h3>Support Queries</h3>
+                        <p>Review and respond to support requests from workers.</p>
+                    </div>
+                    <div class="support-form card inline-form">
+                        <input id="support-receiver" type="text" placeholder="Receiver NIC" />
+                        <input id="support-message" type="text" placeholder="Reply or guidance message" />
+                        <button id="support-send-btn" class="button primary">Send</button>
+                    </div>
+                </div>
+                <div id="support-list" class="support-list"></div>
+            </section>
+        </main>
+    </div>
+
+    <template id="pending-card-template">
+        <article class="worker-card card">
+            <div class="worker-top">
+                <div>
+                    <h4 class="worker-name"></h4>
+                    <p class="worker-nic"></p>
+                </div>
+                <span class="status-badge">Pending</span>
+            </div>
+            <div class="worker-meta"></div>
+            <div class="worker-actions">
+                <button class="button primary verify-btn">Verify</button>
+            </div>
+        </article>
+    </template>
+
+    <template id="support-card-template">
+        <article class="support-card card">
+            <div class="support-top">
+                <div>
+                    <h4 class="support-title"></h4>
+                    <p class="support-channel"></p>
+                </div>
+                <span class="support-time"></span>
+            </div>
+            <p class="support-body"></p>
+        </article>
+    </template>
+
+    <script src="volunteer.js"></script>
+</body>
+</html>

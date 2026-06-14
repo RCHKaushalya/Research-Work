@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/job.dart';
+import '../providers/localization_provider.dart';
+import 'package:provider/provider.dart';
 
 class JobCard extends StatelessWidget {
   final Job job;
@@ -21,6 +23,7 @@ class JobCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lp = context.watch<LocalizationProvider>();
     return Card(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 16),
@@ -92,7 +95,7 @@ class JobCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '${matchScore!.toInt()}% Match',
+                            '${matchScore!.toInt()}% ${lp.translate('match')}',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
@@ -138,7 +141,7 @@ class JobCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    _getTimeAgo(job.createdAt),
+                    _getTimeAgo(job.createdAt, lp),
                     style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
                   ),
                   if (!isOwnJob)
@@ -155,7 +158,7 @@ class JobCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(20),
                           ),
                         ),
-                        child: Text(hasApplied ? 'Applied' : 'Apply'),
+                        child: Text(hasApplied ? lp.translate('applied') : lp.translate('apply')),
                       ),
                     )
                   else
@@ -166,7 +169,7 @@ class JobCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        'Your Post',
+                        lp.translate('yourPost'),
                         style: TextStyle(
                           color: Colors.amber.shade900,
                           fontWeight: FontWeight.bold,
@@ -183,16 +186,16 @@ class JobCard extends StatelessWidget {
     );
   }
 
-  String _getTimeAgo(DateTime dateTime) {
+  String _getTimeAgo(DateTime dateTime, LocalizationProvider lp) {
     final difference = DateTime.now().difference(dateTime);
     if (difference.inDays > 0) {
-      return '${difference.inDays} days ago';
+      return '${difference.inDays} ${lp.translate('daysAgo')}';
     } else if (difference.inHours > 0) {
-      return '${difference.inHours} hours ago';
+      return '${difference.inHours} ${lp.translate('hoursAgo')}';
     } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes} minutes ago';
+      return '${difference.inMinutes} ${lp.translate('minutesAgo')}';
     } else {
-      return 'Just now';
+      return lp.translate('justNow');
     }
   }
 }

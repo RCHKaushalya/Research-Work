@@ -21,51 +21,7 @@ class RegistrationStartScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header Card
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.blue.shade600, Colors.blue.shade800],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.person_add, size: 48, color: Colors.white),
-                      const SizedBox(height: 12),
-                      Text(
-                        lp.translate('basicInformation'),
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '1 / 5',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white.withOpacity(0.8),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
                 const SizedBox(height: 24),
-
-                // Description
-                Text(
-                  lp.translate('register'),
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 32),
 
                 // Steps List
                 _stepItem(
@@ -73,7 +29,7 @@ class RegistrationStartScreen extends StatelessWidget {
                   lp,
                   icon: Icons.info_outline,
                   titleKey: 'basicInformation',
-                  description: 'NIC, PIN, ...',
+                  description: lp.translate('basicInfoDesc'),
                   isRequired: true,
                 ),
                 const SizedBox(height: 16),
@@ -82,7 +38,7 @@ class RegistrationStartScreen extends StatelessWidget {
                   lp,
                   icon: Icons.location_on_outlined,
                   titleKey: 'location',
-                  description: '...',
+                  description: lp.translate('locationDesc'),
                   isRequired: true,
                 ),
                 const SizedBox(height: 16),
@@ -91,7 +47,7 @@ class RegistrationStartScreen extends StatelessWidget {
                   lp,
                   icon: Icons.work_outline,
                   titleKey: 'jobCategory',
-                  description: '...',
+                  description: lp.translate('jobCategoryDesc'),
                   isRequired: false,
                 ),
                 const SizedBox(height: 16),
@@ -100,7 +56,7 @@ class RegistrationStartScreen extends StatelessWidget {
                   lp,
                   icon: Icons.star_outline,
                   titleKey: 'skills',
-                  description: '...',
+                  description: lp.translate('skillsDesc'),
                   isRequired: false,
                 ),
                 const SizedBox(height: 16),
@@ -109,7 +65,7 @@ class RegistrationStartScreen extends StatelessWidget {
                   lp,
                   icon: Icons.image_outlined,
                   titleKey: 'profilePhoto',
-                  description: '...',
+                  description: lp.translate('profilePhotoDesc'),
                   isRequired: false,
                 ),
                 const SizedBox(height: 48),
@@ -186,10 +142,25 @@ class RegistrationStartScreen extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     if (isRequired)
-                      const Icon(Icons.check_circle, size: 14, color: Colors.blue)
+                      const Icon(
+                        Icons.check_circle,
+                        size: 14,
+                        color: Colors.blue,
+                      )
                     else
-                      const Icon(Icons.circle_outlined, size: 14, color: Colors.grey),
+                      const Icon(
+                        Icons.circle_outlined,
+                        size: 14,
+                        color: Colors.grey,
+                      ),
                   ],
+                ),
+                Text(
+                  description,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
                 ),
               ],
             ),

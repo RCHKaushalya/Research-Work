@@ -126,7 +126,7 @@ class JobsScreen extends StatelessWidget {
               _buildStatItem(lp.translate('completedJobs'), user.completedJobsCount.toString(), Colors.green),
               _buildStatItem(lp.translate('appliedJobs'), user.jobCategoryIds.length.toString(), Colors.blue), // Using categories as a proxy for 'applied/potential'
               _buildStatItem(lp.translate('postedJobs'), '0', Colors.orange), // To be tracked
-              _buildStatItem('Abandoned', user.abandonedJobsCount.toString(), Colors.red),
+              _buildStatItem(lp.translate('abandoned'), user.abandonedJobsCount.toString(), Colors.red),
             ],
           ),
         ],

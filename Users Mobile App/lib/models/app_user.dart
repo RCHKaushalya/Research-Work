@@ -4,7 +4,12 @@ class Review {
   final double rating;
   final DateTime date;
 
-  Review({required this.authorName, required this.comment, required this.rating, required this.date});
+  Review({
+    required this.authorName,
+    required this.comment,
+    required this.rating,
+    required this.date,
+  });
 
   Map<String, dynamic> toMap() => {
     'authorName': authorName,
@@ -13,12 +18,26 @@ class Review {
     'date': date.toIso8601String(),
   };
 
-  factory Review.fromMap(Map<dynamic, dynamic> map) => Review(
-    authorName: map['authorName'] ?? '',
-    comment: map['comment'] ?? '',
-    rating: (map['rating'] ?? 0).toDouble(),
-    date: DateTime.parse(map['date'] ?? DateTime.now().toIso8601String()),
-  );
+  factory Review.fromMap(Map<dynamic, dynamic> map) {
+    DateTime parsedDate;
+    final rawDate = map['date'];
+    if (rawDate is String) {
+      parsedDate = DateTime.parse(rawDate);
+    } else if (rawDate is int) {
+      parsedDate = DateTime.fromMillisecondsSinceEpoch(rawDate);
+    } else if (rawDate is DateTime) {
+      parsedDate = rawDate;
+    } else {
+      parsedDate = DateTime.now();
+    }
+
+    return Review(
+      authorName: map['authorName'] ?? '',
+      comment: map['comment'] ?? '',
+      rating: (map['rating'] ?? 0).toDouble(),
+      date: parsedDate,
+    );
+  }
 }
 
 class AppUser {
@@ -154,7 +173,9 @@ class AppUser {
       completedJobsCount: (map['completedJobsCount'] ?? 0).toInt(),
       abandonedJobsCount: (map['abandonedJobsCount'] ?? 0).toInt(),
       portfolioPhotos: _stringList(map['portfolioPhotos']),
-      reviews: (map['reviews'] as List? ?? []).map((r) => Review.fromMap(r)).toList(),
+      reviews: (map['reviews'] as List? ?? [])
+          .map((r) => Review.fromMap(r))
+          .toList(),
     );
   }
 

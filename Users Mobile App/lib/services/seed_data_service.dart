@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
-import '../models/app_user.dart';
 import '../models/job.dart';
-import 'api_service.dart';
+import 'supabase_service.dart';
+
 
 class SeedDataService {
   static const List<Map<String, dynamic>> testWorkers = [
@@ -300,9 +300,14 @@ class SeedDataService {
 
   static Future<void> _registerWorker(Map<String, dynamic> worker) async {
     try {
-      final response = await ApiService.post('/auth/register', {
+      // Register user with NIC + PIN via Supabase upsert
+      await SupabaseService.registerNicPinUser({
         'nic': worker['nic'],
-        'pin': worker['pin'],
+        'password_hash': worker['pin'],
+      });
+      
+      final userData = {
+        'nic': worker['nic'],
         'first_name': worker['firstName'],
         'last_name': worker['lastName'],
         'phone': worker['phone'],
@@ -310,15 +315,18 @@ class SeedDataService {
         'ds_area': worker['dsAreaName'],
         'job_category_ids': worker['jobCategories'],
         'skill_ids': worker['skills'],
-      });
-
-      if (response.statusCode == 200) {
-        debugPrint(
-          '✅ Registered: ${worker['firstName']} ${worker['lastName']}',
-        );
-      } else {
-        debugPrint('⚠️  ${worker['firstName']}: ${response.statusCode}');
-      }
+        'rating': worker['rating'] ?? 0.0,
+        'completed_jobs_count': worker['completedJobs'] ?? 0,
+        'abandoned_jobs_count': 0,
+        'posted_jobs_count': 0,
+        'applied_jobs_count': 0,
+        'removed_jobs_count': 0,
+        'is_blocked': 0,
+        'availability_status': 'available',
+      };
+      
+      await SupabaseService.saveUserProfile(worker['nic'], userData);
+      debugPrint('✅ Registered: ${worker['firstName']} ${worker['lastName']}');
     } catch (e) {
       debugPrint('⚠️  Registration error for ${worker['firstName']}: $e');
     }
@@ -326,19 +334,22 @@ class SeedDataService {
 
   static Future<void> _createJob(Map<String, dynamic> job) async {
     try {
-      final response = await ApiService.post('/jobs', {
-        'title': job['title'],
-        'description': job['description'],
-        'area': job['area'],
-        'skill_ids_needed': job['skills'],
-        'status': job['status'],
-      });
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        debugPrint('✅ Created job: ${job['title']}');
-      } else {
-        debugPrint('⚠️  Job error: ${response.statusCode} - ${job['title']}');
-      }
+      await SupabaseService.createJob(Job(
+        id: '',
+        title: job['title'],
+        description: job['description'],
+        employerId: job['employerId'],
+        employerName: '',
+        categoryId: '',
+        categoryName: job['skills']?.first?.toString() ?? '',
+        location: job['area'],
+        status: job['status'],
+        appliedWorkerIds: const [],
+        acceptedWorkerIds: const [],
+        requiredSkillIds: List<String>.from(job['skills'] ?? []),
+        createdAt: DateTime.now(),
+      ));
+      debugPrint('Created job: ${job['title']}');
     } catch (e) {
       debugPrint('⚠️  Job creation error: $e');
     }
@@ -389,15 +400,10 @@ class SeedDataService {
         .toList();
   }
 
-  /// Quick seed check - returns true if data already seeded
   static Future<bool> isAlreadySeeded() async {
     try {
-      // Check if first demo user exists
-      final response = await ApiService.post('/auth/login', {
-        'nic': '200011111111',
-        'pin': '1234',
-      });
-      return response.statusCode == 200;
+      final user = await SupabaseService.fetchUserProfile('200011111111');
+      return user != null;
     } catch (e) {
       return false;
     }

@@ -105,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     labelText: localizationProvider.translate(
                       AppStrings.nicLabel,
                     ),
-                    hintText: '200012345678',
+                    hintText: '200000000000',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -176,8 +176,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      localizationProvider.translate('dontHaveAccount') ??
-                          'Don\'t have an account? ',
+                      localizationProvider.translate('dontHaveAccount'),
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     TextButton(

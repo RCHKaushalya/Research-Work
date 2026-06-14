@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/localization_provider.dart';
 import 'providers/job_provider.dart';
 import 'providers/alerts_provider.dart';
+import 'providers/chat_provider.dart';
+import 'providers/chatbot_provider.dart';
+import 'services/supabase_service.dart';
 import 'screens/main_layout_screen.dart';
 import 'screens/landing_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await SupabaseService.initialize();
   runApp(
     MultiProvider(
       providers: [
@@ -19,6 +21,8 @@ void main() async {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => JobProvider()),
         ChangeNotifierProvider(create: (_) => AlertsProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
+        ChangeNotifierProvider(create: (_) => ChatbotProvider()),
       ],
       child: const WorkforceApp(),
     ),
@@ -41,7 +45,7 @@ class WorkforceApp extends StatelessWidget {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          supportedLocales: const [Locale('si'), Locale('ta')],
+          supportedLocales: const [Locale('si'), Locale('ta'), Locale('en')],
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(
               seedColor: const Color(0xFF2196F3),
@@ -55,8 +59,12 @@ class WorkforceApp extends StatelessWidget {
             ),
           ),
           home: auth.isInitialized
-              ? (auth.isAuthenticated ? const MainLayoutScreen() : const LandingScreen())
-              : const Scaffold(body: Center(child: CircularProgressIndicator())),
+              ? (auth.isAuthenticated
+                    ? const MainLayoutScreen()
+                    : const LandingScreen())
+              : const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                ),
         );
       },
     );

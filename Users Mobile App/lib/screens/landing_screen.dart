@@ -57,7 +57,7 @@ class LandingScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Workforce Platform',
+                  lp.translate('platformName'),
                   style: TextStyle(fontSize: 18, color: Colors.blue.shade100),
                 ),
                 const Spacer(),

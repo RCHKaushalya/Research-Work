@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class LocalizationProvider extends ChangeNotifier {
-  static const List<String> _supportedLocales = ['si', 'ta'];
+  static const List<String> _supportedLocales = ['si', 'ta', 'en'];
   static const Map<String, String> _localeNames = {
     'si': 'Sinhala',
     'ta': 'Tamil',
+    'en': 'English',
   };
 
   Locale _currentLocale = const Locale('si');
@@ -17,14 +18,16 @@ class LocalizationProvider extends ChangeNotifier {
   }
 
   Locale get currentLocale => _currentLocale;
-  String get currentLanguageName => _localeNames[_currentLocale.languageCode] ?? 'Sinhala';
+  String get currentLanguageName =>
+      _localeNames[_currentLocale.languageCode] ?? 'Sinhala';
   Map<String, dynamic> get localizedStrings => _localizedStrings;
   List<String> get supportedLocales => _supportedLocales;
 
   Future<void> _loadTranslations(String languageCode) async {
     try {
-      String jsonString = await rootBundle
-          .loadString('assets/translations/$languageCode.json');
+      String jsonString = await rootBundle.loadString(
+        'assets/translations/$languageCode.json',
+      );
       _localizedStrings = jsonDecode(jsonString);
     } catch (e) {
       print('Error loading translations for $languageCode: $e');

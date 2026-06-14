@@ -6,7 +6,6 @@ import '../data/registration_catalog.dart';
 import '../providers/auth_provider.dart';
 import '../providers/localization_provider.dart';
 import '../providers/job_provider.dart';
-import '../services/api_service.dart';
 import 'landing_screen.dart';
 import 'registration_start_screen.dart';
 
@@ -17,18 +16,10 @@ class ProfileScreen extends StatelessWidget {
     BuildContext context,
     AuthProvider auth,
   ) async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      final response = await ApiService.uploadFile(
-        '/users/me/portfolio',
-        pickedFile.path,
-      );
-      if (response.statusCode == 200) {
-        // Refresh profile
-        await auth.init();
-      }
-    }
+    final lp = context.read<LocalizationProvider>();
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(lp.translate('notImplemented'))));
   }
 
   Future<void> _updateProfilePhoto(
@@ -38,14 +29,7 @@ class ProfileScreen extends StatelessWidget {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
-      final response = await ApiService.uploadFile(
-        '/users/me/photo',
-        pickedFile.path,
-      );
-      if (response.statusCode == 200) {
-        // Refresh profile
-        await auth.init();
-      }
+      await auth.uploadProfilePhoto(pickedFile.path);
     }
   }
 
@@ -59,18 +43,18 @@ class ProfileScreen extends StatelessWidget {
 
         final appliedJobs = jobProvider.getAppliedJobs(user.nic);
         final postedJobs = jobProvider.getPostedJobs(user.nic);
-        final isSinhala = lp.currentLocale.languageCode == 'si';
-
         return Scaffold(
           appBar: AppBar(
             title: Text(lp.translate('profileTab')),
             actions: [
-              IconButton(
-                icon: Icon(
-                  isSinhala ? Icons.translate : Icons.language,
-                  color: Colors.blue,
-                ),
-                onPressed: () => lp.setLanguage(isSinhala ? 'ta' : 'si'),
+              PopupMenuButton<String>(
+                onSelected: lp.setLanguage,
+                itemBuilder: (context) => const [
+                  PopupMenuItem(value: 'si', child: Text('සිංහල')),
+                  PopupMenuItem(value: 'ta', child: Text('தமிழ்')),
+                  PopupMenuItem(value: 'en', child: Text('English')),
+                ],
+                icon: const Icon(Icons.language, color: Colors.blue),
               ),
               IconButton(
                 icon: const Icon(Icons.logout, color: Colors.red),
@@ -137,7 +121,7 @@ class ProfileScreen extends StatelessWidget {
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                           Text(
-                            ' (12 ${lp.translate('reviews')})',
+                            ' (${user.reviews.length} ${lp.translate('reviews')})',
                             style: const TextStyle(color: Colors.grey),
                           ),
                         ],
@@ -310,9 +294,9 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 if (user.reviews.isEmpty)
-                  const Text(
-                    'No reviews yet.',
-                    style: TextStyle(color: Colors.grey),
+                  Text(
+                    lp.translate('noReviews'),
+                    style: const TextStyle(color: Colors.grey),
                   )
                 else
                   ...user.reviews.map((r) => _buildReviewTile(r)),
@@ -327,8 +311,6 @@ class ProfileScreen extends StatelessWidget {
   ImageProvider? _getImageProvider(String? path) {
     if (path == null) return null;
     if (path.startsWith('http')) return NetworkImage(path);
-    if (path.startsWith('uploads/'))
-      return NetworkImage('${ApiService.baseUrl}/$path');
     return FileImage(File(path));
   }
 

@@ -18,18 +18,22 @@ class DashboardScreen extends StatelessWidget {
     final jobProvider = context.watch<JobProvider>();
     final user = authProvider.currentUser;
 
-    if (user == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (user == null)
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     final suitableJobs = jobProvider.getSuitableJobsForCategories(user);
-    final isSinhala = lp.currentLocale.languageCode == 'si';
-
     return Scaffold(
       appBar: AppBar(
         title: Text(lp.translate('dashboard')),
         actions: [
-          IconButton(
-            icon: Icon(isSinhala ? Icons.translate : Icons.language, color: Colors.blue),
-            onPressed: () => lp.setLanguage(isSinhala ? 'ta' : 'si'),
+          PopupMenuButton<String>(
+            onSelected: lp.setLanguage,
+            itemBuilder: (context) => const [
+              PopupMenuItem(value: 'si', child: Text('සිංහල')),
+              PopupMenuItem(value: 'ta', child: Text('தமிழ்')),
+              PopupMenuItem(value: 'en', child: Text('English')),
+            ],
+            icon: const Icon(Icons.language, color: Colors.blue),
           ),
         ],
       ),
@@ -44,14 +48,17 @@ class DashboardScreen extends StatelessWidget {
               // Welcome Text
               Text(
                 '${lp.translate('welcome')}, ${user.firstName}!',
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 lp.translate('suitableJobs'),
                 style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
               ),
-              
+
               const SizedBox(height: 24),
 
               // Jobs List
@@ -60,9 +67,16 @@ class DashboardScreen extends StatelessWidget {
                   child: Column(
                     children: [
                       const SizedBox(height: 40),
-                      Icon(Icons.work_outline, size: 64, color: Colors.grey.shade300),
+                      Icon(
+                        Icons.work_outline,
+                        size: 64,
+                        color: Colors.grey.shade300,
+                      ),
                       const SizedBox(height: 16),
-                      Text(lp.translate('noJobsFound'), style: TextStyle(color: Colors.grey.shade500)),
+                      Text(
+                        lp.translate('noJobsFound'),
+                        style: TextStyle(color: Colors.grey.shade500),
+                      ),
                     ],
                   ),
                 )
@@ -70,7 +84,7 @@ class DashboardScreen extends StatelessWidget {
                 ...suitableJobs.map((job) {
                   final matchScore = jobProvider.getMatchScore(job, user);
                   final hasApplied = jobProvider.hasApplied(job.id, user.nic);
-                  
+
                   return JobCard(
                     job: job,
                     hasApplied: hasApplied,
@@ -82,7 +96,9 @@ class DashboardScreen extends StatelessWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => JobDetailsScreen(job: job)),
+                        MaterialPageRoute(
+                          builder: (_) => JobDetailsScreen(job: job),
+                        ),
                       );
                     },
                   );
@@ -92,7 +108,10 @@ class DashboardScreen extends StatelessWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PostJobScreen())),
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const PostJobScreen()),
+        ),
         label: Text(lp.translate('postJob')),
         icon: const Icon(Icons.add),
         backgroundColor: Colors.blue.shade600,
