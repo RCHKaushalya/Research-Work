@@ -173,7 +173,16 @@ def process_sms_command(phone_number: str, message: str):
     parts = message.strip().split()
     if not parts: return
     
-    cmd = parts[0].upper()
+    # Check for <job_id_prefix> 1 pattern (apply command shorthand)
+    if len(parts) >= 2 and parts[1] == "1":
+        job_data = find_job_by_prefix(parts[0])
+        if job_data:
+            cmd = "APPLY"
+            parts = ["APPLY", parts[0]]
+        else:
+            cmd = parts[0].upper()
+    else:
+        cmd = parts[0].upper()
 
     if not supabase_is_configured():
         raise RuntimeError("Supabase is not configured.")

@@ -18,7 +18,7 @@ from PyQt6.QtWidgets import (
     QTabWidget, QPushButton, QLineEdit, QTextEdit, QLabel,
     QTableWidget, QTableWidgetItem, QDialog, QComboBox, QDoubleSpinBox,
     QMessageBox, QSpinBox, QDateTimeEdit, QHeaderView, QStackedWidget,
-    QListWidget, QListWidgetItem, QSplitter, QFormLayout, QInputDialog
+    QListWidget, QListWidgetItem, QSplitter, QFormLayout, QInputDialog, QGroupBox
 )
 from PyQt6.QtCore import Qt, QDateTime, pyqtSignal, QThread, QTimer
 from PyQt6.QtGui import QIcon, QColor, QFont
@@ -38,12 +38,15 @@ SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY") or os.getenv("SUPABASE_KEY") 
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 
 # API Headers
-def api_headers():
-    return {
+def api_headers(prefer_representation=False):
+    headers = {
         "apikey": SUPABASE_ANON_KEY,
         "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
         "Content-Type": "application/json",
     }
+    if prefer_representation:
+        headers["Prefer"] = "return=representation"
+    return headers
 
 
 @dataclass
@@ -80,43 +83,43 @@ class Review:
     created_at: str
 
 
-# Dark Theme QSS Stylesheet
+# Sky Blue Theme QSS Stylesheet
 QSS_STYLESHEET = """
 QMainWindow {
-    background-color: #1a1a24;
+    background-color: #f0f4f8;
 }
 QWidget {
-    background-color: #1a1a24;
-    color: #e2e8f0;
+    background-color: #f0f4f8;
+    color: #2d3748;
     font-family: 'Segoe UI', Arial, sans-serif;
     font-size: 13px;
 }
 QTabWidget::pane {
-    border: 1px solid #2d3748;
-    background: #23232f;
+    border: 1px solid #cbd5e0;
+    background: #ffffff;
     border-radius: 6px;
 }
 QTabBar::tab {
-    background: #1a1a24;
-    border: 1px solid #2d3748;
+    background: #e2e8f0;
+    border: 1px solid #cbd5e0;
     padding: 10px 20px;
     margin-right: 4px;
     border-top-left-radius: 6px;
     border-top-right-radius: 6px;
-    color: #a0aec0;
+    color: #718096;
     font-weight: bold;
 }
 QTabBar::tab:selected {
-    background: #23232f;
-    border-bottom-color: #4fd1c5;
-    color: #4fd1c5;
+    background: #ffffff;
+    border-bottom-color: #3182ce;
+    color: #3182ce;
 }
 QTabBar::tab:hover:not(:selected) {
-    background: #2d3748;
-    color: #e2e8f0;
+    background: #edf2f7;
+    color: #4a5568;
 }
 QPushButton {
-    background-color: #319795;
+    background-color: #3182ce;
     color: #ffffff;
     border: none;
     padding: 8px 18px;
@@ -124,69 +127,72 @@ QPushButton {
     font-weight: bold;
 }
 QPushButton:hover {
-    background-color: #38b2ac;
+    background-color: #4299e1;
 }
 QPushButton:pressed {
-    background-color: #2c7a7b;
+    background-color: #2b6cb0;
 }
 QPushButton:disabled {
-    background-color: #4a5568;
+    background-color: #cbd5e0;
     color: #a0aec0;
 }
 QLineEdit, QTextEdit, QComboBox, QDoubleSpinBox, QSpinBox, QDateTimeEdit {
-    background-color: #2d3748;
-    border: 1px solid #4a5568;
+    background-color: #ffffff;
+    border: 1px solid #cbd5e0;
     padding: 8px;
     border-radius: 6px;
-    color: #ffffff;
+    color: #2d3748;
 }
 QLineEdit:focus, QTextEdit:focus, QComboBox:focus, QDoubleSpinBox:focus, QSpinBox:focus {
-    border: 1px solid #4fd1c5;
+    border: 1px solid #3182ce;
 }
 QTableWidget {
-    background-color: #23232f;
-    gridline-color: #2d3748;
-    border: 1px solid #2d3748;
+    background-color: #ffffff;
+    gridline-color: #edf2f7;
+    border: 1px solid #cbd5e0;
     border-radius: 6px;
-    alternate-background-color: #2d3748;
+    alternate-background-color: #f7fafc;
 }
 QHeaderView::section {
-    background-color: #2d3748;
-    color: #4fd1c5;
+    background-color: #ebf8ff;
+    color: #2b6cb0;
     padding: 8px;
-    border: 1px solid #1a1a24;
+    border: 1px solid #cbd5e0;
     font-weight: bold;
 }
 QTableWidget::item {
     padding: 8px;
 }
 QListWidget {
-    background-color: #23232f;
-    border: 1px solid #2d3748;
+    background-color: #ffffff;
+    border: 1px solid #cbd5e0;
     border-radius: 6px;
     padding: 4px;
 }
 QListWidget::item {
     padding: 8px;
-    border-bottom: 1px solid #2d3748;
+    border-bottom: 1px solid #edf2f7;
 }
 QListWidget::item:selected {
-    background-color: #319795;
+    background-color: #3182ce;
     color: white;
     border-radius: 4px;
 }
 QListWidget::item:hover:not(:selected) {
-    background-color: #2d3748;
+    background-color: #edf2f7;
 }
 QLabel {
-    color: #cbd5e0;
+    color: #4a5568;
 }
 QGroupBox {
-    border: 1px solid #2d3748;
+    border: 1px solid #cbd5e0;
     border-radius: 6px;
     margin-top: 12px;
     font-weight: bold;
-    color: #4fd1c5;
+    color: #2b6cb0;
+}
+QStackedWidget {
+    background-color: #f0f4f8;
 }
 """
 
@@ -207,8 +213,8 @@ class LoginWidget(QWidget):
         card.setObjectName("AuthCard")
         card.setStyleSheet("""
             QWidget#AuthCard {
-                background-color: #23232f;
-                border: 1px solid #2d3748;
+                background-color: #ffffff;
+                border: 1px solid #cbd5e0;
                 border-radius: 8px;
             }
         """)
@@ -219,13 +225,13 @@ class LoginWidget(QWidget):
 
         title = QLabel("WORKFORCE PLATFORM")
         title.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
-        title.setStyleSheet("color: #4fd1c5; margin-bottom: 5px;")
+        title.setStyleSheet("color: #3182ce; margin-bottom: 5px;")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         card_layout.addWidget(title)
 
         subtitle = QLabel("Employer Portal Login")
         subtitle.setFont(QFont("Segoe UI", 11))
-        subtitle.setStyleSheet("color: #a0aec0; margin-bottom: 20px;")
+        subtitle.setStyleSheet("color: #718096; margin-bottom: 20px;")
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         card_layout.addWidget(subtitle)
 
@@ -253,12 +259,12 @@ class LoginWidget(QWidget):
         register_link.setStyleSheet("""
             QPushButton {
                 background-color: transparent;
-                color: #4fd1c5;
+                color: #3182ce;
                 font-weight: normal;
                 text-decoration: underline;
             }
             QPushButton:hover {
-                color: #00F5FF;
+                color: #4299e1;
             }
         """)
         register_link.clicked.connect(self.parent_window.switch_to_register)
@@ -319,8 +325,8 @@ class RegisterWidget(QWidget):
         card.setObjectName("AuthCard")
         card.setStyleSheet("""
             QWidget#AuthCard {
-                background-color: #23232f;
-                border: 1px solid #2d3748;
+                background-color: #ffffff;
+                border: 1px solid #cbd5e0;
                 border-radius: 8px;
             }
         """)
@@ -331,13 +337,13 @@ class RegisterWidget(QWidget):
 
         title = QLabel("WORKFORCE PLATFORM")
         title.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
-        title.setStyleSheet("color: #4fd1c5; margin-bottom: 5px;")
+        title.setStyleSheet("color: #3182ce; margin-bottom: 5px;")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         card_layout.addWidget(title)
 
         subtitle = QLabel("Employer Registration")
         subtitle.setFont(QFont("Segoe UI", 11))
-        subtitle.setStyleSheet("color: #a0aec0; margin-bottom: 20px;")
+        subtitle.setStyleSheet("color: #718096; margin-bottom: 20px;")
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         card_layout.addWidget(subtitle)
 
@@ -396,12 +402,12 @@ class RegisterWidget(QWidget):
         login_link.setStyleSheet("""
             QPushButton {
                 background-color: transparent;
-                color: #4fd1c5;
+                color: #3182ce;
                 font-weight: normal;
                 text-decoration: underline;
             }
             QPushButton:hover {
-                color: #00F5FF;
+                color: #4299e1;
             }
         """)
         login_link.clicked.connect(self.parent_window.switch_to_login)
@@ -524,7 +530,7 @@ class EmployeeManagementSystem(QWidget):
         header_layout = QHBoxLayout()
         employer_label = QLabel(f"Employer: {self.employer_name} ({self.employer_nic})")
         employer_label.setFont(QFont("Arial", 12, QFont.Weight.Bold))
-        employer_label.setStyleSheet("color: #4fd1c5;")
+        employer_label.setStyleSheet("color: #3182ce;")
         header_layout.addWidget(employer_label)
         header_layout.addStretch()
 
@@ -548,7 +554,7 @@ class EmployeeManagementSystem(QWidget):
 
         # Applications Tab
         apps_widget = self.create_applications_tab()
-        self.tabs.addTab(apps_widget, "Applications")
+        self.tabs.addTab(apps_widget, "Requested Workers (Requests)")
 
         # Workers Tab
         workers_widget = self.create_workers_tab()
@@ -565,26 +571,36 @@ class EmployeeManagementSystem(QWidget):
         widget = QWidget()
         layout = QVBoxLayout()
 
-        # New Job Form
-        form_layout = QHBoxLayout()
+        # New Job Form Group Box
+        form_group = QGroupBox("Post a New Job")
+        form_layout = QFormLayout()
+        form_group.setLayout(form_layout)
 
         self.job_title_input = QLineEdit()
-        self.job_title_input.setPlaceholderText("Job Title")
-        form_layout.addWidget(self.job_title_input)
+        self.job_title_input.setPlaceholderText("e.g. Masonry Work")
+        form_layout.addRow("Job Title:", self.job_title_input)
 
         self.job_desc_input = QLineEdit()
-        self.job_desc_input.setPlaceholderText("Description")
-        form_layout.addWidget(self.job_desc_input)
+        self.job_desc_input.setPlaceholderText("e.g. Building a brick wall at the site")
+        form_layout.addRow("Description:", self.job_desc_input)
 
         self.job_location_input = QLineEdit()
-        self.job_location_input.setPlaceholderText("Location")
-        form_layout.addWidget(self.job_location_input)
+        self.job_location_input.setPlaceholderText("e.g. Colombo (District)")
+        form_layout.addRow("Location:", self.job_location_input)
 
-        post_job_btn = QPushButton("Post Job")
+        self.job_category_input = QLineEdit()
+        self.job_category_input.setPlaceholderText("e.g. Construction")
+        form_layout.addRow("Category:", self.job_category_input)
+
+        self.job_skills_input = QLineEdit()
+        self.job_skills_input.setPlaceholderText("e.g. bricklaying, masonry (comma separated)")
+        form_layout.addRow("Required Skills:", self.job_skills_input)
+
+        post_job_btn = QPushButton("Post Job & Notify Matching Workers")
         post_job_btn.clicked.connect(self.post_job)
-        form_layout.addWidget(post_job_btn)
+        form_layout.addRow("", post_job_btn)
 
-        layout.addLayout(form_layout)
+        layout.addWidget(form_group)
 
         # Jobs Table
         self.jobs_table = QTableWidget()
@@ -639,12 +655,8 @@ class EmployeeManagementSystem(QWidget):
         self.workers_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         left_layout.addWidget(self.workers_table)
 
-        # Left Actions
+        # Left Actions (Removed Unilateral Job Assignment to enforce application flow)
         left_actions = QHBoxLayout()
-
-        assign_btn = QPushButton("Assign to Job")
-        assign_btn.clicked.connect(self.assign_selected_worker_to_job)
-        left_actions.addWidget(assign_btn)
 
         add_group_btn = QPushButton("Add to Group")
         add_group_btn.clicked.connect(self.add_selected_worker_to_group)
@@ -809,13 +821,17 @@ class EmployeeManagementSystem(QWidget):
             QMessageBox.critical(self, "Error", f"Failed to load data: {e}")
 
     def post_job(self):
-        """Post a new job."""
-        title = self.job_title_input.text()
-        description = self.job_desc_input.text()
-        location = self.job_location_input.text()
+        """Post a new job and notify matching workers in the area with same skills."""
+        title = self.job_title_input.text().strip()
+        description = self.job_desc_input.text().strip()
+        location = self.job_location_input.text().strip()
+        category = self.job_category_input.text().strip() or "General"
+        skills_raw = self.job_skills_input.text().strip()
+
+        skills = [s.strip().lower() for s in skills_raw.split(",") if s.strip()]
 
         if not all([title, description, location]):
-            QMessageBox.warning(self, "Validation", "Please fill in all job fields")
+            QMessageBox.warning(self, "Validation", "Please fill in Title, Description, and Location")
             return
 
         job_data = {
@@ -823,8 +839,9 @@ class EmployeeManagementSystem(QWidget):
             "description": description,
             "employer_nic": self.employer_nic,
             "location": location,
+            "category": category,
             "status": "open",
-            "required_skills": [],
+            "required_skills": skills,
             "applied_worker_ids": [],
             "accepted_worker_ids": [],
             "payments": [],
@@ -832,18 +849,75 @@ class EmployeeManagementSystem(QWidget):
         }
 
         try:
+            # POST with return=representation preference to retrieve job id
             response = requests.post(
                 f"{SUPABASE_URL}/rest/v1/jobs",
-                headers=api_headers(),
+                headers=api_headers(prefer_representation=True),
                 json=job_data,
                 timeout=10
             )
             if response.status_code == 201:
-                QMessageBox.information(self, "Success", "Job posted successfully!")
+                created_jobs = response.json()
+                job_id = created_jobs[0]["id"] if created_jobs else None
+                job_prefix = job_id[:4] if job_id else "xxxx"
+
+                QMessageBox.information(self, "Success", f"Job posted successfully! (ID Prefix: {job_prefix})")
+                
+                # Clear form
                 self.job_title_input.clear()
                 self.job_desc_input.clear()
                 self.job_location_input.clear()
+                self.job_category_input.clear()
+                self.job_skills_input.clear()
+                
+                # Load fresh data
                 self.load_data()
+
+                # Filter matching workers in the area with the same skills
+                matching_workers = []
+                for worker in self.all_users:
+                    if worker["nic"] == self.employer_nic:
+                        continue
+
+                    # 1. Match Location (district or ds_area)
+                    worker_loc = worker.get("district", "").strip().lower()
+                    worker_ds = worker.get("ds_area", "").strip().lower()
+                    job_loc = location.strip().lower()
+
+                    loc_match = (worker_loc == job_loc or worker_ds == job_loc)
+
+                    # 2. Match Skills
+                    skills_match = False
+                    if not skills:
+                        skills_match = True
+                    else:
+                        worker_skills = [s.strip().lower() for s in worker.get("skill_ids", [])]
+                        for s in skills:
+                            if s in worker_skills:
+                                skills_match = True
+                                break
+
+                    if loc_match and skills_match:
+                        matching_workers.append(worker)
+
+                # Broadcast notifications via SMS
+                notified_count = 0
+                for w in matching_workers:
+                    phone = w.get("phone")
+                    if phone:
+                        msg = f"New Job: {title} in {location}. Reply '{job_prefix} 1' to apply."
+                        try:
+                            requests.post(
+                                f"{BACKEND_URL}/sms/send",
+                                json={"phone_number": phone, "message": msg},
+                                timeout=5
+                            )
+                            notified_count += 1
+                        except Exception as ex:
+                            print(f"Failed to send matching job notification to {phone}: {ex}")
+
+                if matching_workers:
+                    QMessageBox.information(self, "SMS Broadcast Status", f"Notified {notified_count} matching workers in the area via SMS.")
             else:
                 QMessageBox.critical(self, "Error", f"Failed to post job: {response.text}")
         except Exception as e:
@@ -913,7 +987,7 @@ class EmployeeManagementSystem(QWidget):
             self.apps_table.setItem(i, 3, QTableWidgetItem(app.status))
 
             # Actions button
-            action_btn = QPushButton("Review")
+            action_btn = QPushButton("Review Request")
             action_btn.clicked.connect(lambda checked, app_id=app.id: self.review_application(app_id))
             self.apps_table.setCellWidget(i, 4, action_btn)
 
@@ -1075,59 +1149,6 @@ class EmployeeManagementSystem(QWidget):
                 self.groups[selected_group].remove(worker_nic)
                 self.save_groups()
                 self.refresh_group_workers_list()
-
-    def assign_selected_worker_to_job(self):
-        row = self.workers_table.currentRow()
-        if row == -1:
-            QMessageBox.warning(self, "Selection Required", "Please select a worker from the search table.")
-            return
-        worker = self.filtered_users[row]
-        worker_nic = worker["nic"]
-
-        open_jobs = [j for j in self.jobs if j.status == "open"]
-        if not open_jobs:
-            QMessageBox.warning(self, "No Open Jobs", "You do not have any open jobs to assign this worker to.")
-            return
-
-        job_titles = [f"{j.title} ({j.location})" for j in open_jobs]
-        from PyQt6.QtWidgets import QInputDialog
-        job_title, ok = QInputDialog.getItem(self, "Assign to Job", "Select Job:", job_titles, 0, False)
-        if ok and job_title:
-            idx = job_titles.index(job_title)
-            job = open_jobs[idx]
-
-            new_accepted_workers = list(job.accepted_worker_ids)
-            if worker_nic in new_accepted_workers:
-                QMessageBox.information(self, "Info", "Worker is already assigned to this job.")
-                return
-            new_accepted_workers.append(worker_nic)
-
-            try:
-                response = requests.patch(
-                    f"{SUPABASE_URL}/rest/v1/jobs",
-                    headers=api_headers(),
-                    params={"id": f"eq.{job.id}"},
-                    json={"accepted_worker_ids": new_accepted_workers},
-                    timeout=10
-                )
-
-                app_data = {
-                    "job_id": job.id,
-                    "worker_nic": worker_nic,
-                    "status": "accepted",
-                    "applied_at": datetime.utcnow().isoformat() + "Z"
-                }
-                requests.post(
-                    f"{SUPABASE_URL}/rest/v1/applications",
-                    headers=api_headers(),
-                    json=app_data,
-                    timeout=10
-                )
-
-                QMessageBox.information(self, "Success", f"Worker successfully assigned to job '{job.title}'!")
-                self.load_data()
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to assign worker to job: {e}")
 
     def log_payment_for_selected_worker(self):
         worker_nic = None
@@ -1462,13 +1483,13 @@ class EmployeeManagementSystem(QWidget):
         dialog.exec()
 
     def review_application(self, app_id: str):
-        """Review an application."""
+        """Review an application (request)."""
         app = next((a for a in self.applications if a.id == app_id), None)
         if not app:
             return
 
         dialog = QDialog(self)
-        dialog.setWindowTitle(f"Review Application")
+        dialog.setWindowTitle(f"Review Request")
         dialog.setGeometry(300, 300, 400, 180)
 
         layout = QVBoxLayout()
@@ -1483,10 +1504,10 @@ class EmployeeManagementSystem(QWidget):
         layout.addWidget(QLabel(f"Current Status: {app.status.upper()}"))
 
         btn_box = QHBoxLayout()
-        accept_btn = QPushButton("Accept")
-        accept_btn.setStyleSheet("background-color: #2f855a; color: white;")
-        reject_btn = QPushButton("Reject")
-        reject_btn.setStyleSheet("background-color: #c53030; color: white;")
+        accept_btn = QPushButton("Accept Request (Select Worker)")
+        accept_btn.setStyleSheet("background-color: #3182ce; color: white;")
+        reject_btn = QPushButton("Reject Request")
+        reject_btn.setStyleSheet("background-color: #e53e3e; color: white;")
         cancel_btn = QPushButton("Cancel")
 
         btn_box.addWidget(accept_btn)
@@ -1516,7 +1537,7 @@ class EmployeeManagementSystem(QWidget):
                             timeout=10
                         )
 
-                QMessageBox.information(dialog, "Success", f"Application marked as {new_status}!")
+                QMessageBox.information(dialog, "Success", f"Worker successfully selected/marked as {new_status}!")
                 dialog.accept()
                 self.load_data()
             except Exception as e:
