@@ -22,6 +22,8 @@ Thumbs.db
 
 # Standalone envs
 Employee Management System/.env
+Employee Management System/.venv/
+Employee Management System/__pycache__/
 
 # Untracked build/junk paths
 SMS Gateway/
