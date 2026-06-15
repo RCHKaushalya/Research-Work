@@ -35,7 +35,7 @@ if _ENV_FILE.exists():
 
 # Configuration
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://your-project.supabase.co")
-SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY") or os.getenv("SUPABASE_KEY") or ""
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 
 # API Headers
