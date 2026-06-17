@@ -22,6 +22,12 @@ REJECT A1B2C3 991234567V
 CLOSE A1B2C3
 ```
 
+## Response Language
+
+- If the sender phone number is already registered, replies use that user's saved `language` value from Supabase: `si`, `ta`, or `en`.
+- If the phone number is not registered, replies use Sinhala and Tamil together.
+- SMS command words stay in English uppercase, such as `REG`, `JOBS`, `APPLY`, `APPROVE`, and `REJECT`, because those are the parser commands.
+
 ## Main Files
 
 - `main.py`: FastAPI app, webhook handler, SMS command processing.
@@ -88,3 +94,5 @@ https://your-sms-system.onrender.com/sms/webhook
 - `GET /commands`: supported SMS commands.
 - `POST /sms/webhook`: real SMS Gateway webhook endpoint.
 - `POST /sms/incoming`: local/admin test endpoint.
+
+Render or uptime checks may call `HEAD /` or `HEAD /health`; those are supported and are not SMS messages. Real inbound SMS messages must appear as `POST /sms/webhook` in the Render logs.
