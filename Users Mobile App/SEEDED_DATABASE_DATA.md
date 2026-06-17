@@ -41,6 +41,6 @@ The visible viva data is Sinhala/Tamil script data, not English/transliterated p
 
 - The seed script uses `SUPABASE_SERVICE_ROLE_KEY` if it is set. If not, it uses `SUPABASE_ANON_KEY`, then falls back to the mobile app publishable key.
 - For a production database, prefer the service role key when seeding.
-- Without `SUPABASE_SERVICE_ROLE_KEY`, protected tables such as volunteers and pending approvals may be blocked by Supabase RLS. The mobile-visible users, jobs, reviews, SMS logs, and chats still seed with the current publishable key.
+- Without `SUPABASE_SERVICE_ROLE_KEY`, volunteer upserts may be blocked by Supabase RLS. Pending user/job approvals, mobile-visible users, jobs, reviews, SMS logs, and chats seed with the current publishable key.
 - Profile-photo upload needs the `profile-photos` storage bucket from `SMS System/supabase_schema.sql`.
 - The live database already has working volunteer accounts such as `COL-SI-001 / 123456` and `COL-TA-001 / 123456`.

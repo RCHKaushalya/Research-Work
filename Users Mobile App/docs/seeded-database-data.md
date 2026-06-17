@@ -13,7 +13,7 @@ The script populates Supabase with Sinhala/Tamil viva demo data:
 - Applications, accepted workers, payments, reviews, chats, SMS logs, pending approvals, and volunteers.
 - Legacy cleanup for old English demo rows such as `Build a house`, `Test Job`, and temporary form-import users.
 
-Use `SUPABASE_SERVICE_ROLE_KEY` when available. Without it, Supabase RLS can block protected volunteer and pending-approval tables, but the mobile-visible user/job/review/SMS/chat seed data still updates.
+Use `SUPABASE_SERVICE_ROLE_KEY` when available. Without it, Supabase RLS can block volunteer upserts, but pending approvals and the mobile-visible user/job/review/SMS/chat seed data still update.
 
 Demo credentials:
 

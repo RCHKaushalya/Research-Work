@@ -149,16 +149,16 @@ $volunteers = @(
 )
 
 $pendingUsers = @(
-  @{id='33333333-3333-4333-8333-333333333301';phone='+94733330001';nic='200300000001';pin='1234';first_name='ඉරේෂා';last_name='දිල්රුක්ෂි';district='කොළඹ';ds_area='කොළඹ';language='si';job_category_ids=@('C04');skill_ids=@('S401','S402');status='pending'}
-  @{id='33333333-3333-4333-8333-333333333302';phone='+94733330002';nic='200300000002';pin='1234';first_name='නිරෝෂන්';last_name='කුමාර';district='05';ds_area='0505';language='si';job_category_ids=@('C03');skill_ids=@('S301');status='pending'}
-  @{id='33333333-3333-4333-8333-333333333303';phone='+94733330003';nic='200300000003';pin='1234';first_name='விஜய்';last_name='குமார்';district='யாழ்ப்பாணம்';ds_area='நல்லூர்';language='ta';job_category_ids=@('C10');skill_ids=@('S1001');status='pending'}
-  @{id='33333333-3333-4333-8333-333333333304';phone='+94733330004';nic='200300000004';pin='1234';first_name='ரிஸ்வானா';last_name='ஹலீம்';district='16';ds_area='1608';language='ta';job_category_ids=@('C06');skill_ids=@('S601');status='pending'}
+  @{id='33333333-3333-4333-8333-333333333301';phone='+94733330001';first_name='ඉරේෂා';last_name='දිල්රුක්ෂි';district='කොළඹ';ds_area='කොළඹ';language='si';status='pending'}
+  @{id='33333333-3333-4333-8333-333333333302';phone='+94733330002';first_name='නිරෝෂන්';last_name='කුමාර';district='05';ds_area='0505';language='si';status='pending'}
+  @{id='33333333-3333-4333-8333-333333333303';phone='+94733330003';first_name='விஜய்';last_name='குமார்';district='யாழ்ப்பாணம்';ds_area='நல்லூர்';language='ta';status='pending'}
+  @{id='33333333-3333-4333-8333-333333333304';phone='+94733330004';first_name='ரிஸ்வானா';last_name='ஹலீம்';district='16';ds_area='1608';language='ta';status='pending'}
 )
 
 $pendingJobs = @(
-  @{id='44444444-4444-4444-8444-444444444401';employer_nic='200100000001';employer_name='සුනිල් පෙරේරා';employer_phone='+94710100001';job_title='කුඩා වහල අලුත්වැඩියා';job_description='වැස්සට කලින් වහලේ කාන්දු තැන් අලුත්වැඩියා කිරීමට කෙනෙකු අවශ්‍යයි.';district='කොළඹ';ds_area='කොළඹ';category='ඉදිකිරීම් සහ කාර්මික';required_skills='S102, S107';payment='රු. 15000';language='si';status='pending'}
-  @{id='44444444-4444-4444-8444-444444444402';employer_nic='200200000001';employer_name='அருள் குமார்';employer_phone='+94720100001';job_title='கடை கணக்குப் பதிவு';job_description='மாலை நேர விற்பனை மற்றும் கணக்கு பதிவு உதவி தேவை.';district='10';ds_area='1004';category='தகவல் தொழில்நுட்பம் மற்றும் எழுத்தர்';required_skills='S1201';payment='ஒரு நாளுக்கு ரூ. 2500';language='ta';status='pending'}
-  @{id='44444444-4444-4444-8444-444444444403';employer_nic='200100000011';employer_name='පවිත්‍රා මධුෂානි';employer_phone='+94710100011';job_title='ගමේ උත්සවයක ආහාර සැපයුම් සහාය';job_description='සේවය කිරීම සහ අවසාන පිරිසිදු කිරීම සඳහා සහායකයින් තුන්දෙනෙකු අවශ්‍යයි.';district='22';ds_area='2201';category='උත්සව සහ සැපයුම්';required_skills='S1301, S1302';payment='එක් අයෙකුට රු. 5000';language='si';status='pending'}
+  @{id='44444444-4444-4444-8444-444444444401';employer_name='සුනිල් පෙරේරා';employer_phone='+94710100001';job_title='කුඩා වහල අලුත්වැඩියා';job_description='වැස්සට කලින් වහලේ කාන්දු තැන් අලුත්වැඩියා කිරීමට කෙනෙකු අවශ්‍යයි.';district='කොළඹ';ds_area='කොළඹ';category='ඉදිකිරීම් සහ කාර්මික';required_skills='S102, S107';payment='රු. 15000';language='si';status='pending'}
+  @{id='44444444-4444-4444-8444-444444444402';employer_name='அருள் குமார்';employer_phone='+94720100001';job_title='கடை கணக்குப் பதிவு';job_description='மாலை நேர விற்பனை மற்றும் கணக்கு பதிவு உதவி தேவை.';district='10';ds_area='1004';category='தகவல் தொழில்நுட்பம் மற்றும் எழுத்தர்';required_skills='S1201';payment='ஒரு நாளுக்கு ரூ. 2500';language='ta';status='pending'}
+  @{id='44444444-4444-4444-8444-444444444403';employer_name='පවිත්‍රා මධුෂානි';employer_phone='+94710100011';job_title='ගමේ උත්සවයක ආහාර සැපයුම් සහාය';job_description='සේවය කිරීම සහ අවසාන පිරිසිදු කිරීම සඳහා සහායකයින් තුන්දෙනෙකු අවශ්‍යයි.';district='22';ds_area='2201';category='උත්සව සහ සැපයුම්';required_skills='S1301, S1302';payment='එක් අයෙකුට රු. 5000';language='si';status='pending'}
 )
 
 $smsMessages = @(
@@ -185,6 +185,12 @@ $legacyFixes = @(
   @{table='jobs';filter='id=eq.c1f1207e-faa1-40b1-9433-a7e970f804a0';values=@{title='ගාල්ල වත්තේ කෘෂිකාර්මික සහාය';description='ගාල්ල ප්‍රදේශයේ වත්තක වගා කටයුතු සඳහා දෛනික සේවකයෙකු අවශ්‍යයි.';employer_nic='100022222222';category='කෘෂිකර්මය සහ වතු';location='0901';status='open';required_skills=@('S301');applied_worker_ids=@();accepted_worker_ids=@();payments=@()}}
   @{table='users';filter='nic=eq.TEMP_';values=@{first_name='තාවකාලික';last_name='භාවිතා කරන්නා';language='si';district='01';ds_area='0101';verified=$false}}
   @{table='users';filter="nic=eq.$([uri]::EscapeDataString('TEMP_ைபேசி எண்'))";values=@{first_name='தற்காலிக';last_name='பயனர்';language='ta';district='10';ds_area='1004';verified=$false}}
+  @{table='pending_user_registrations';filter='id=eq.89dc2c94-8f47-47fe-a4e4-2ecd0b63f4ed';values=@{first_name='චතුර';last_name='සිල්වා';district='ත්‍රිකුණාමලය';ds_area='නගරය සහ ග්‍රැවට්ස්';language='si';status='pending'}}
+  @{table='pending_user_registrations';filter='id=eq.bc1891a3-23e8-47ca-bdc5-90122cfc6a9d';values=@{first_name='මධුෂා';last_name='සෙව්වන්දි';district='කොළඹ';ds_area='කොළඹ';language='si';status='pending'}}
+  @{table='pending_user_registrations';filter='id=eq.1fea1cd4-e345-42cd-83f4-1cc08ec65a2d';values=@{first_name='අසම්පූර්ණ';last_name='ඉල්ලීම';district='ගම්පහ';ds_area='මීරිගම';language='si';status='rejected'}}
+  @{table='pending_user_registrations';filter='id=eq.f6057b91-71e4-4a56-9caa-d4d1a9119e64';values=@{first_name='රසින්දු';last_name='අප්පුහාමි';district='ගම්පහ';ds_area='මීරිගම';language='si';status='pending'}}
+  @{table='pending_user_registrations';filter='id=eq.3ed665ed-1062-402b-b712-69adb25a7aeb';values=@{first_name='சிவா';last_name='குமார்';district='திருகோணமலை';ds_area='திருகோணமலை நகரம்';language='ta';status='pending'}}
+  @{table='pending_job_posts';filter='id=eq.100af413-9faf-48fe-83ab-3ba5de357340';values=@{employer_name='රසින්දු අප්පුහාමි';job_title='මීරිගම නිවසේ මේසන් වැඩ';job_description='ගූගල් ෆෝම් පරීක්ෂණ රැකියාව වෙනුවට සැබෑ නිවසේ බිත්ති වැඩ සඳහා සේවකයෙකු අවශ්‍යයි.';district='ගම්පහ';ds_area='මීරිගම';category='ඉදිකිරීම් සහ කාර්මික';required_skills='S101';payment='රු. 3000';language='si';status='pending'}}
 )
 
 foreach ($u in $users) {
