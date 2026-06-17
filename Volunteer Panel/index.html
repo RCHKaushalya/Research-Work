@@ -84,14 +84,19 @@
     <section id="register-user-tab" class="tab-panel">
       <div class="form-card card">
         <h3>Register Non-Smartphone User</h3>
+        <input id="reg-nic" placeholder="NIC (unique user key)" />
+        <input id="reg-pin" placeholder="SMS PIN / password" />
         <input id="reg-phone" placeholder="Phone number" />
         <input id="reg-first-name" placeholder="First name" />
         <input id="reg-last-name" placeholder="Last name" />
-        <input id="reg-district" placeholder="District" />
-        <input id="reg-ds-area" placeholder="DS Area" />
+        <select id="reg-district"></select>
+        <select id="reg-ds-area"></select>
+        <input id="reg-categories" placeholder="Job category keys, comma separated" />
+        <input id="reg-skills" placeholder="Skill keys, comma separated" />
         <select id="reg-language">
           <option value="si">Sinhala</option>
           <option value="ta">Tamil</option>
+          <option value="en">English</option>
         </select>
         <button id="manual-register-btn" class="button primary">Register User</button>
       </div>
@@ -100,18 +105,20 @@
     <section id="post-job-tab" class="tab-panel">
       <div class="form-card card">
         <h3>Post Job for Employer</h3>
+        <input id="job-employer-nic" placeholder="Employer NIC (preferred)" />
         <input id="job-employer-name" placeholder="Employer name" />
         <input id="job-employer-phone" placeholder="Employer phone" />
         <input id="job-title" placeholder="Job title" />
         <textarea id="job-description" placeholder="Job description"></textarea>
-        <input id="job-district" placeholder="District" />
-        <input id="job-ds-area" placeholder="DS Area" />
+        <select id="job-district"></select>
+        <select id="job-ds-area"></select>
         <input id="job-category" placeholder="Category" />
-        <input id="job-skills" placeholder="Required skills" />
+        <input id="job-skills" placeholder="Required skill keys, comma separated" />
         <input id="job-payment" placeholder="Payment" />
         <select id="job-language">
           <option value="si">Sinhala</option>
           <option value="ta">Tamil</option>
+          <option value="en">English</option>
         </select>
         <button id="manual-job-btn" class="button primary">Post Job</button>
       </div>
@@ -140,7 +147,22 @@
   </main>
 </div>
 
+<div id="approval-modal" class="modal-overlay hidden">
+  <div class="modal-card">
+    <h3 id="approval-title">Approve Request</h3>
+    <p id="approval-summary" class="modal-summary"></p>
+    <form id="approval-form">
+      <div id="approval-fields" class="form-grid"></div>
+      <div class="modal-actions">
+        <button type="button" id="approval-cancel-btn" class="button outline">Cancel</button>
+        <button type="submit" class="button primary">Approve Request</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script src="config.js"></script>
+<script src="location_data.js"></script>
 <script src="volunteer.js"></script>
 </body>
 </html>

@@ -23,8 +23,8 @@ Workforce Platform/
 
 - Flutter Mobile App -> Supabase REST/Realtimes APIs.
 - SMS System -> SMS Gateway API + Supabase.
-- Volunteer Panel -> Supabase REST API.
-- Admin Portal -> Supabase REST API + direct SMS Gateway sending.
+- Volunteer Panel -> Supabase REST API, including keyed pending-request approvals for assisted users.
+- Admin Portal -> Supabase REST API + volunteer management + direct SMS Gateway sending.
 - Employee Management System -> Supabase REST API + direct SMS Gateway sending.
 - Google Forms/Sheets flow is described in the report as a low-barrier registration/job-posting channel and should sync into Supabase outside the SMS System folder.
 
@@ -68,5 +68,7 @@ Supabase is the shared backend for:
 - messages
 - reviews
 - SMS message logs where used
+- volunteers
+- pending user registrations and pending job posts
 
 The schema used by the SMS service is in `SMS System/supabase_schema.sql`.

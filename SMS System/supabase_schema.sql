@@ -6,7 +6,10 @@ drop table if exists public.reviews cascade;
 drop table if exists public.messages cascade;
 drop table if exists public.applications cascade;
 drop table if exists public.jobs cascade;
+drop table if exists public.pending_job_posts cascade;
+drop table if exists public.pending_user_registrations cascade;
 drop table if exists public.users cascade;
+drop table if exists public.volunteers cascade;
 drop table if exists public.sms_messages cascade;
 
 create table if not exists public.users (
@@ -31,6 +34,53 @@ create table if not exists public.users (
     is_blocked integer default 0,
     job_category_ids text[] default '{}',
     skill_ids text[] default '{}',
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
+);
+
+create table if not exists public.volunteers (
+    id uuid not null unique default gen_random_uuid(),
+    volunteer_id text primary key,
+    full_name text not null,
+    password text not null,
+    district text,
+    language text default 'si',
+    active boolean default true,
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
+);
+
+create table if not exists public.pending_user_registrations (
+    id uuid primary key default gen_random_uuid(),
+    phone text,
+    nic text,
+    pin text,
+    first_name text,
+    last_name text,
+    district text,
+    ds_area text,
+    language text default 'si',
+    job_category_ids text[] default '{}',
+    skill_ids text[] default '{}',
+    status text not null default 'pending',
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
+);
+
+create table if not exists public.pending_job_posts (
+    id uuid primary key default gen_random_uuid(),
+    employer_nic text,
+    employer_name text,
+    employer_phone text,
+    job_title text,
+    job_description text,
+    district text,
+    ds_area text,
+    category text,
+    required_skills text,
+    payment text,
+    language text default 'si',
+    status text not null default 'pending',
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now()
 );
@@ -89,6 +139,9 @@ create table if not exists public.sms_messages (
 );
 
 create index if not exists idx_users_nic on public.users (nic);
+create index if not exists idx_volunteers_active on public.volunteers (active);
+create index if not exists idx_pending_user_registrations_status on public.pending_user_registrations (status);
+create index if not exists idx_pending_job_posts_status on public.pending_job_posts (status);
 create index if not exists idx_jobs_status on public.jobs (status);
 create index if not exists idx_jobs_location on public.jobs (location);
 create index if not exists idx_applications_worker_nic on public.applications (worker_nic);
@@ -98,6 +151,9 @@ create index if not exists idx_sms_messages_direction_status on public.sms_messa
 
 -- Disable Row Level Security on all tables to allow public REST API access without active session policies (standard for the prototype)
 alter table public.users disable row level security;
+alter table public.volunteers disable row level security;
+alter table public.pending_user_registrations disable row level security;
+alter table public.pending_job_posts disable row level security;
 alter table public.jobs disable row level security;
 alter table public.applications disable row level security;
 alter table public.messages disable row level security;

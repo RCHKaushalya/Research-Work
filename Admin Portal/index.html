@@ -52,11 +52,21 @@
                     <span class="label">SMS Logs</span>
                     <span id="stat-sms" class="value">0</span>
                 </div>
+                <div class="stat-card">
+                    <span class="label">Volunteers</span>
+                    <span id="stat-volunteers" class="value">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="label">Pending Requests</span>
+                    <span id="stat-pending" class="value">0</span>
+                </div>
             </div>
 
             <div class="tabs">
                 <button class="tab-btn active" data-tab="users-tab">Users</button>
                 <button class="tab-btn" data-tab="jobs-tab">Jobs</button>
+                <button class="tab-btn" data-tab="volunteers-tab">Volunteers</button>
+                <button class="tab-btn" data-tab="pending-tab">Pending</button>
                 <button class="tab-btn" data-tab="apps-tab">Applications</button>
                 <button class="tab-btn" data-tab="financial-tab">Financials</button>
                 <button class="tab-btn" data-tab="sms-tab">SMS Gateway</button>
@@ -118,6 +128,82 @@
                                 <!-- Data injected here -->
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="volunteers-tab" class="tab-content">
+                <div class="card table-card">
+                    <div class="card-header-actions">
+                        <h3>Volunteer Management</h3>
+                        <button class="btn primary-sm" onclick="openVolunteerModal()">+ Add Volunteer</button>
+                    </div>
+                    <div class="table-scroll">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Volunteer</th>
+                                    <th>Volunteer ID</th>
+                                    <th>District</th>
+                                    <th>Language</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="volunteers-table-body">
+                                <!-- Data injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="pending-tab" class="tab-content">
+                <div class="pending-grid">
+                    <div class="card table-card">
+                        <div class="card-header-actions">
+                            <h3>Pending User Registrations</h3>
+                            <span id="pending-users-badge" class="badge pending">0 pending</span>
+                        </div>
+                        <div class="table-scroll">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Phone</th>
+                                        <th>Location</th>
+                                        <th>Language</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pending-users-table-body">
+                                    <!-- Data injected here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card table-card">
+                        <div class="card-header-actions">
+                            <h3>Pending Job Posts</h3>
+                            <span id="pending-jobs-badge" class="badge pending">0 pending</span>
+                        </div>
+                        <div class="table-scroll">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Job</th>
+                                        <th>Employer</th>
+                                        <th>Location</th>
+                                        <th>Category</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pending-jobs-table-body">
+                                    <!-- Data injected here -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -220,11 +306,23 @@
                     </div>
                     <div class="form-group">
                         <label>District</label>
-                        <input type="text" id="u-district">
+                        <select id="u-district"></select>
                     </div>
                     <div class="form-group">
                         <label>DS Area</label>
-                        <input type="text" id="u-ds">
+                        <select id="u-ds"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Language</label>
+                        <select id="u-language">
+                            <option value="si">Sinhala</option>
+                            <option value="ta">Tamil</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>SMS PIN / Password</label>
+                        <input type="text" id="u-pin">
                     </div>
                 </div>
                 <div class="modal-actions">
@@ -254,8 +352,12 @@
                         <input type="text" id="j-employer" required style="letter-spacing: normal; font-size: 16px; text-align: left;">
                     </div>
                     <div class="form-group">
-                        <label>Location (Area)</label>
-                        <input type="text" id="j-area" required style="letter-spacing: normal; font-size: 16px; text-align: left;">
+                        <label>District</label>
+                        <select id="j-district"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>DS Area</label>
+                        <select id="j-area" required></select>
                     </div>
                     <div class="form-group">
                         <label>Status</label>
@@ -275,9 +377,71 @@
         </div>
     </div>
 
+    <!-- Volunteer Modal -->
+    <div id="volunteer-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h3 id="volunteer-modal-title">Add/Edit Volunteer</h3>
+            <form id="volunteer-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Volunteer ID</label>
+                        <input type="text" id="v-id" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="v-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="text" id="v-password" required>
+                    </div>
+                    <div class="form-group">
+                        <label>District Authority</label>
+                        <select id="v-district"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Language</label>
+                        <select id="v-language">
+                            <option value="si">Sinhala</option>
+                            <option value="ta">Tamil</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="v-active">
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn outline" onclick="closeModals()">Cancel</button>
+                    <button type="submit" class="btn primary">Save Volunteer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Approval Modal -->
+    <div id="approval-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h3 id="approval-modal-title">Approve Request</h3>
+            <p id="approval-modal-summary"></p>
+            <form id="approval-form">
+                <div id="approval-fields" class="form-grid"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn outline" onclick="closeModals()">Cancel</button>
+                    <button type="submit" class="btn primary">Approve Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
+    <script src="location_data.js"></script>
     <script src="admin.js"></script>
 </body>
 </html>

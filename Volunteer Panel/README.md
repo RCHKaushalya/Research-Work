@@ -9,6 +9,7 @@ This panel uses Supabase directly. It does not depend on the `SMS System` FastAP
 - `index.html`: volunteer panel layout.
 - `volunteer.css`: panel styling.
 - `volunteer.js`: Supabase reads/writes and volunteer workflows.
+- `location_data.js`: generated district and DS key catalog copied from the mobile app.
 - `config.js`: local/deployment Supabase config. This file is ignored by Git.
 
 ## Local Setup
@@ -32,4 +33,6 @@ Deploy this folder separately as a static site/web service. For Render static ho
 
 - Keep `config.js` out of GitHub.
 - Volunteer workflows write directly to Supabase.
+- Pending registrations and job posts open as correction forms before approval.
+- District and DS area values are saved as mobile-app-compatible keys.
 - SMS for feature-phone users belongs in `SMS System`; this panel should not call SMS System endpoints.
