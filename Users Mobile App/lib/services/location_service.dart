@@ -1,9 +1,9 @@
 import '../data/local_location_data.dart';
-import 'package:flutter/material.dart';
 
 class LocationData {
   final String id;
-  final String name; // Holds localized name based on locale, or JSON string. For simplicity we will adapt it below.
+  final String
+  name; // Holds localized name based on locale, or JSON string. For simplicity we will adapt it below.
   final Map<String, dynamic> rawName;
 
   LocationData({required this.id, required this.name, required this.rawName});
@@ -22,7 +22,6 @@ class LocationData {
 class LocationService {
   static final LocationService _instance = LocationService._internal();
 
-  bool _initialized = false;
   String _currentLocale = 'si';
 
   LocationService._internal();
@@ -32,9 +31,9 @@ class LocationService {
   }
 
   Future<void> init() async {
-    _initialized = true;
+    return;
   }
-  
+
   void updateLocale(String locale) {
     _currentLocale = locale;
   }
@@ -50,5 +49,32 @@ class LocationService {
     return areas
         .map((item) => LocationData.fromJson(item, _currentLocale))
         .toList();
+  }
+
+  String getDistrictName(String districtId) {
+    if (districtId.isEmpty) return '';
+    final district = getDistricts().where((item) => item.id == districtId);
+    return district.isNotEmpty ? district.first.name : districtId;
+  }
+
+  String getDSAreaName(String dsAreaId, [String? districtId]) {
+    if (dsAreaId.isEmpty) return '';
+    final districtIds = districtId != null && districtId.isNotEmpty
+        ? [districtId]
+        : LocalLocationData.dsAreas.keys;
+
+    for (final id in districtIds) {
+      final area = getDSAreas(id).where((item) => item.id == dsAreaId);
+      if (area.isNotEmpty) return area.first.name;
+    }
+
+    return dsAreaId;
+  }
+
+  String getLocationName(String locationId) {
+    if (locationId.isEmpty) return '';
+    final dsAreaName = getDSAreaName(locationId);
+    if (dsAreaName != locationId) return dsAreaName;
+    return getDistrictName(locationId);
   }
 }

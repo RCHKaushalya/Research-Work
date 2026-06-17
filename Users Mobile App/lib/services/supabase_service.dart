@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/app_user.dart';
@@ -24,6 +26,58 @@ class SupabaseService {
   }
 
   static SupabaseClient get client => Supabase.instance.client;
+
+  static Future<String> uploadProfilePhoto({
+    required String nic,
+    required Uint8List bytes,
+    required String fileName,
+  }) async {
+    return _uploadUserPhoto(
+      nic: nic,
+      bytes: bytes,
+      fileName: fileName,
+      prefix: 'profile',
+    );
+  }
+
+  static Future<String> uploadPortfolioPhoto({
+    required String nic,
+    required Uint8List bytes,
+    required String fileName,
+  }) async {
+    return _uploadUserPhoto(
+      nic: nic,
+      bytes: bytes,
+      fileName: fileName,
+      prefix: 'portfolio',
+    );
+  }
+
+  static Future<String> _uploadUserPhoto({
+    required String nic,
+    required Uint8List bytes,
+    required String fileName,
+    required String prefix,
+  }) async {
+    if (!isConfigured) {
+      throw StateError('Supabase is not configured.');
+    }
+
+    final extension = _extensionFor(fileName);
+    final contentType = _contentTypeFor(extension);
+    final storagePath =
+        '${nic.toUpperCase()}/${prefix}_${DateTime.now().millisecondsSinceEpoch}.$extension';
+
+    await client.storage
+        .from('profile-photos')
+        .uploadBinary(
+          storagePath,
+          bytes,
+          fileOptions: FileOptions(contentType: contentType, upsert: true),
+        );
+
+    return client.storage.from('profile-photos').getPublicUrl(storagePath);
+  }
 
   static Future<List<Job>> fetchJobs() async {
     if (!isConfigured) {
@@ -61,11 +115,7 @@ class SupabaseService {
     if (job.id.isNotEmpty) payload['id'] = job.id;
 
     // .select().single() causes Supabase to return the newly inserted row
-    final row = await client
-        .from('jobs')
-        .insert(payload)
-        .select()
-        .single();
+    final row = await client.from('jobs').insert(payload).select().single();
     return Map<String, dynamic>.from(row as Map);
   }
 
@@ -99,8 +149,7 @@ class SupabaseService {
       // either the same DS area or the broader district.
       if (dsArea.isNotEmpty) {
         final workerDs = (row['ds_area'] ?? '').toString().toLowerCase();
-        final workerDistrict =
-            (row['district'] ?? '').toString().toLowerCase();
+        final workerDistrict = (row['district'] ?? '').toString().toLowerCase();
         if (workerDs != dsArea.toLowerCase() &&
             workerDistrict != district.toLowerCase()) {
           continue;
@@ -110,8 +159,7 @@ class SupabaseService {
       // Skill filter: at least one skill must overlap.
       if (skillIds.isNotEmpty) {
         final workerSkills = _stringList(row['skill_ids']);
-        final hasOverlap =
-            skillIds.any((s) => workerSkills.contains(s));
+        final hasOverlap = skillIds.any((s) => workerSkills.contains(s));
         if (!hasOverlap) continue;
       }
 
@@ -251,6 +299,23 @@ class SupabaseService {
     return Map<String, dynamic>.from(rows.first as Map);
   }
 
+  static Future<List<Map<String, dynamic>>> fetchUsers({
+    int limit = 100,
+  }) async {
+    if (!isConfigured) {
+      return [];
+    }
+
+    final response = await client
+        .from('users')
+        .select()
+        .order('rating', ascending: false)
+        .limit(limit);
+
+    final rows = response as List<dynamic>;
+    return rows.map((row) => Map<String, dynamic>.from(row as Map)).toList();
+  }
+
   static Future<void> saveUserProfile(
     String nic,
     Map<String, dynamic> data,
@@ -345,5 +410,32 @@ class SupabaseService {
       }).toList();
     }
     return const [];
+  }
+
+  static String _extensionFor(String fileName) {
+    final sanitized = fileName.toLowerCase().split('?').first;
+    final extension = sanitized.contains('.')
+        ? sanitized.split('.').last
+        : 'jpg';
+
+    if (extension == 'jpeg' ||
+        extension == 'jpg' ||
+        extension == 'png' ||
+        extension == 'webp') {
+      return extension == 'jpeg' ? 'jpg' : extension;
+    }
+
+    return 'jpg';
+  }
+
+  static String _contentTypeFor(String extension) {
+    switch (extension) {
+      case 'png':
+        return 'image/png';
+      case 'webp':
+        return 'image/webp';
+      default:
+        return 'image/jpeg';
+    }
   }
 }

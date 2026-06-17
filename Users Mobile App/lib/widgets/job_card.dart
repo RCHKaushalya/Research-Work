@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/job.dart';
 import '../providers/localization_provider.dart';
+import '../services/location_service.dart';
 import 'package:provider/provider.dart';
 
 class JobCard extends StatelessWidget {
@@ -24,6 +25,9 @@ class JobCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lp = context.watch<LocalizationProvider>();
+    final locationService = LocationService()
+      ..updateLocale(lp.currentLocale.languageCode);
+    final locationLabel = locationService.getLocationName(job.location);
     return Card(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 16),
@@ -113,7 +117,7 @@ class JobCard extends StatelessWidget {
                   Icon(Icons.location_on, size: 16, color: Colors.grey.shade600),
                   const SizedBox(width: 4),
                   Text(
-                    job.location,
+                    locationLabel,
                     style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
                   ),
                   const SizedBox(width: 16),

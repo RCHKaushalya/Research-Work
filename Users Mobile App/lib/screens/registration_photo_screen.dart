@@ -39,17 +39,16 @@ class _RegistrationPhotoScreenState extends State<RegistrationPhotoScreen> {
 
       if (result.isSuccess) {
         if (_image != null) {
-          // Try to upload photo to server
           final uploadSuccess = await authProvider.uploadProfilePhoto(
-            _image!.path,
+            bytes: await _image!.readAsBytes(),
+            fileName: _image!.name,
           );
 
-          // If server upload fails, save the local path as fallback
           if (!uploadSuccess && authProvider.currentUser != null) {
             final userWithPhoto = authProvider.currentUser!.copyWith(
               profilePhotoPath: _image!.path,
             );
-            await authProvider.saveUser(userWithPhoto);
+            authProvider.saveLocalUser(userWithPhoto);
           }
         }
 

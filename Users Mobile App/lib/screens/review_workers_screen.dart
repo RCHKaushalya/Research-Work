@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/job.dart';
@@ -10,7 +13,11 @@ class ReviewWorkersScreen extends StatefulWidget {
   final Job job;
   final List<AppUser> workers;
 
-  const ReviewWorkersScreen({super.key, required this.job, required this.workers});
+  const ReviewWorkersScreen({
+    super.key,
+    required this.job,
+    required this.workers,
+  });
 
   @override
   State<ReviewWorkersScreen> createState() => _ReviewWorkersScreenState();
@@ -42,9 +49,7 @@ class _ReviewWorkersScreenState extends State<ReviewWorkersScreen> {
     final lp = context.read<LocalizationProvider>();
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(lp.translate('giveReview')),
-      ),
+      appBar: AppBar(title: Text(lp.translate('giveReview'))),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: widget.workers.length,
@@ -60,11 +65,21 @@ class _ReviewWorkersScreenState extends State<ReviewWorkersScreen> {
                   Row(
                     children: [
                       CircleAvatar(
-                        backgroundImage: worker.profilePhotoPath != null ? NetworkImage(worker.profilePhotoPath!) : null,
-                        child: worker.profilePhotoPath == null ? const Icon(Icons.person) : null,
+                        backgroundImage: _imageProvider(
+                          worker.profilePhotoPath,
+                        ),
+                        child: _imageProvider(worker.profilePhotoPath) == null
+                            ? const Icon(Icons.person)
+                            : null,
                       ),
                       const SizedBox(width: 12),
-                      Text(worker.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Text(
+                        worker.fullName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -73,7 +88,9 @@ class _ReviewWorkersScreenState extends State<ReviewWorkersScreen> {
                     children: List.generate(5, (starIndex) {
                       return IconButton(
                         icon: Icon(
-                          starIndex < _ratings[worker.nic]! ? Icons.star : Icons.star_border,
+                          starIndex < _ratings[worker.nic]!
+                              ? Icons.star
+                              : Icons.star_border,
                           color: Colors.orange,
                         ),
                         onPressed: () {
@@ -87,7 +104,8 @@ class _ReviewWorkersScreenState extends State<ReviewWorkersScreen> {
                   TextField(
                     controller: _controllers[worker.nic],
                     decoration: InputDecoration(
-                      hintText: '${lp.translate('note')} (${lp.translate('skip').toLowerCase()})',
+                      hintText:
+                          '${lp.translate('note')} (${lp.translate('skip').toLowerCase()})',
                       border: const OutlineInputBorder(),
                     ),
                     maxLines: 2,
@@ -128,9 +146,20 @@ class _ReviewWorkersScreenState extends State<ReviewWorkersScreen> {
               Navigator.pop(context); // Go back to profile
             }
           },
-          child: Text(lp.translate('finish').toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold)),
+          child: Text(
+            lp.translate('finish').toUpperCase(),
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
         ),
       ),
     );
+  }
+
+  ImageProvider? _imageProvider(String? path) {
+    if (path == null || path.isEmpty) return null;
+    if (path.startsWith('http')) return NetworkImage(path);
+    if (kIsWeb) return null;
+    final file = File(path);
+    return file.existsSync() ? FileImage(file) : null;
   }
 }

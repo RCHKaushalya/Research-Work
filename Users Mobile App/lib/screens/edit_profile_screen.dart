@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/app_user.dart';
 import '../providers/auth_provider.dart';
 import '../providers/localization_provider.dart';
 
@@ -49,19 +48,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             children: [
               TextFormField(
                 controller: _firstNameController,
-                decoration: InputDecoration(labelText: lp.translate('firstName'), border: const OutlineInputBorder()),
+                decoration: InputDecoration(
+                  labelText: lp.translate('firstName'),
+                  border: const OutlineInputBorder(),
+                ),
                 validator: (val) => val!.isEmpty ? lp.translate('error') : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _lastNameController,
-                decoration: InputDecoration(labelText: lp.translate('lastName'), border: const OutlineInputBorder()),
+                decoration: InputDecoration(
+                  labelText: lp.translate('lastName'),
+                  border: const OutlineInputBorder(),
+                ),
                 validator: (val) => val!.isEmpty ? lp.translate('error') : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _phoneController,
-                decoration: InputDecoration(labelText: lp.translate('phoneNumber'), border: const OutlineInputBorder()),
+                decoration: InputDecoration(
+                  labelText: lp.translate('phoneNumber'),
+                  border: const OutlineInputBorder(),
+                ),
                 validator: (val) => val!.isEmpty ? lp.translate('error') : null,
               ),
               const Spacer(),

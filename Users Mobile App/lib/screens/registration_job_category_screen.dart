@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../data/registration_catalog.dart';
 import '../models/app_user.dart';
-import '../providers/auth_provider.dart';
 import '../providers/localization_provider.dart';
 import 'registration_skills_screen.dart';
 
@@ -22,7 +21,6 @@ class _RegistrationJobCategoryScreenState
   bool _submitting = false;
 
   Future<void> _submit() async {
-    final authProvider = context.read<AuthProvider>();
     final lp = context.read<LocalizationProvider>();
 
     setState(() => _submitting = true);

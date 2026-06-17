@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../data/registration_catalog.dart';
@@ -28,14 +29,8 @@ class CandidateProfileScreen extends StatelessWidget {
                   CircleAvatar(
                     radius: 50,
                     backgroundColor: Colors.blue.shade50,
-                    backgroundImage:
-                        (user.profilePhotoPath != null &&
-                            File(user.profilePhotoPath!).existsSync())
-                        ? FileImage(File(user.profilePhotoPath!))
-                        : null,
-                    child:
-                        (user.profilePhotoPath == null ||
-                            !File(user.profilePhotoPath!).existsSync())
+                    backgroundImage: _imageProvider(user.profilePhotoPath),
+                    child: _imageProvider(user.profilePhotoPath) == null
                         ? const Icon(Icons.person, size: 50, color: Colors.blue)
                         : null,
                   ),
@@ -96,13 +91,14 @@ class CandidateProfileScreen extends StatelessWidget {
                     itemCount: user.portfolioPhotos.length,
                     itemBuilder: (context, index) {
                       final path = user.portfolioPhotos[index];
-                      if (!File(path).existsSync()) return const SizedBox();
+                      final image = _imageProvider(path);
+                      if (image == null) return const SizedBox();
                       return Padding(
                         padding: const EdgeInsets.only(right: 10),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(12),
-                          child: Image.file(
-                            File(path),
+                          child: Image(
+                            image: image,
                             width: 100,
                             height: 100,
                             fit: BoxFit.cover,
@@ -203,12 +199,16 @@ class CandidateProfileScreen extends StatelessWidget {
                               children: [
                                 Text(
                                   review.authorName,
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                                 Row(
                                   children: List.generate(5, (star) {
                                     return Icon(
-                                      star < review.rating ? Icons.star : Icons.star_border,
+                                      star < review.rating
+                                          ? Icons.star
+                                          : Icons.star_border,
                                       size: 14,
                                       color: Colors.orange,
                                     );
@@ -219,7 +219,10 @@ class CandidateProfileScreen extends StatelessWidget {
                             const SizedBox(height: 4),
                             Text(
                               '${review.date.day}/${review.date.month}/${review.date.year}',
-                              style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+                              style: TextStyle(
+                                color: Colors.grey.shade500,
+                                fontSize: 11,
+                              ),
                             ),
                             if (review.comment.isNotEmpty) ...[
                               const SizedBox(height: 8),
@@ -262,6 +265,14 @@ class CandidateProfileScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  ImageProvider? _imageProvider(String? path) {
+    if (path == null || path.isEmpty) return null;
+    if (path.startsWith('http')) return NetworkImage(path);
+    if (kIsWeb) return null;
+    final file = File(path);
+    return file.existsSync() ? FileImage(file) : null;
   }
 
   Widget _buildStat(String label, String value) {

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/app_user.dart';
-import '../providers/auth_provider.dart';
 import '../providers/localization_provider.dart';
 import 'registration_location_screen.dart';
 
@@ -44,7 +43,6 @@ class _RegistrationBasicInfoScreenState
       _submitting = true;
     });
 
-    final lp = context.read<LocalizationProvider>();
     final user = AppUser(
       nic: _nicController.text.trim().toUpperCase(),
       firstName: _firstNameController.text.trim(),

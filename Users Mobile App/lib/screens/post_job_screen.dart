@@ -31,6 +31,7 @@ class _PostJobScreenState extends State<PostJobScreen> {
   late final LocationService _locationService;
   List<LocationData> _districts = [];
   List<LocationData> _dsAreas = [];
+  String? _lastLocale;
 
   bool _isSubmitting = false;
 
@@ -44,6 +45,16 @@ class _PostJobScreenState extends State<PostJobScreen> {
   void _loadLocationData() {
     _districts = _locationService.getDistricts();
     setState(() {});
+  }
+
+  void _syncLocale(String locale) {
+    if (_lastLocale == locale) return;
+    _locationService.updateLocale(locale);
+    _districts = _locationService.getDistricts();
+    _dsAreas = _selectedDistrictId != null
+        ? _locationService.getDSAreas(_selectedDistrictId!)
+        : [];
+    _lastLocale = locale;
   }
 
   void _onDistrictChanged(String? districtId) {
@@ -100,7 +111,7 @@ class _PostJobScreenState extends State<PostJobScreen> {
       employerName: user.fullName,
       categoryId: category.id,
       categoryName: category.labelFor(lp.currentLocale.languageCode),
-      location: district.name,
+      location: dsArea?.id ?? district.id,
       requiredSkillIds: _selectedSkillIds.toList(),
       createdAt: DateTime.now(),
     );
@@ -113,8 +124,9 @@ class _PostJobScreenState extends State<PostJobScreen> {
         // 2. Notify matching workers in the area via the SMS Gateway API.
         final notifiedCount = await _notifyMatchingWorkers(
           job: createdJob,
-          district: district.name,
-          dsArea: dsArea?.name ?? '',
+          district: district.id,
+          dsArea: dsArea?.id ?? '',
+          locationLabel: dsArea?.name ?? district.name,
         );
 
         final message = notifiedCount > 0
@@ -149,6 +161,7 @@ class _PostJobScreenState extends State<PostJobScreen> {
     required Job job,
     required String district,
     required String dsArea,
+    required String locationLabel,
   }) async {
     final jobPrefix = job.id.length >= 4 ? job.id.substring(0, 4) : job.id;
 
@@ -170,7 +183,7 @@ class _PostJobScreenState extends State<PostJobScreen> {
 
     int notifiedCount = 0;
     final smsMessage =
-        'New Job: "${job.title}" in $district. '
+        'New Job: "${job.title}" in $locationLabel. '
         'Reply "$jobPrefix 1" to apply. (SMS users only)';
 
     for (final worker in matchingWorkers) {
@@ -194,6 +207,7 @@ class _PostJobScreenState extends State<PostJobScreen> {
   @override
   Widget build(BuildContext context) {
     final lp = context.watch<LocalizationProvider>();
+    _syncLocale(lp.currentLocale.languageCode);
 
     return Scaffold(
       appBar: AppBar(title: Text(lp.translate('postJob'))),

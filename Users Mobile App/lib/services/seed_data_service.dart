@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import '../models/job.dart';
 import 'supabase_service.dart';
 
-
 class SeedDataService {
   static const List<Map<String, dynamic>> testWorkers = [
     {
@@ -286,7 +285,7 @@ class SeedDataService {
 
       debugPrint('✅ All ${testJobs.length} jobs created');
 
-      // Apply to some jobs (simulate worker interest)
+      // Record sample worker interest for the developer seed helper.
       await _createApplications();
 
       debugPrint('✅ Applications created');
@@ -305,7 +304,7 @@ class SeedDataService {
         'nic': worker['nic'],
         'password_hash': worker['pin'],
       });
-      
+
       final userData = {
         'nic': worker['nic'],
         'first_name': worker['firstName'],
@@ -324,7 +323,7 @@ class SeedDataService {
         'is_blocked': 0,
         'availability_status': 'available',
       };
-      
+
       await SupabaseService.saveUserProfile(worker['nic'], userData);
       debugPrint('✅ Registered: ${worker['firstName']} ${worker['lastName']}');
     } catch (e) {
@@ -334,21 +333,23 @@ class SeedDataService {
 
   static Future<void> _createJob(Map<String, dynamic> job) async {
     try {
-      await SupabaseService.createJob(Job(
-        id: '',
-        title: job['title'],
-        description: job['description'],
-        employerId: job['employerId'],
-        employerName: '',
-        categoryId: '',
-        categoryName: job['skills']?.first?.toString() ?? '',
-        location: job['area'],
-        status: job['status'],
-        appliedWorkerIds: const [],
-        acceptedWorkerIds: const [],
-        requiredSkillIds: List<String>.from(job['skills'] ?? []),
-        createdAt: DateTime.now(),
-      ));
+      await SupabaseService.createJob(
+        Job(
+          id: '',
+          title: job['title'],
+          description: job['description'],
+          employerId: job['employerId'],
+          employerName: '',
+          categoryId: '',
+          categoryName: job['skills']?.first?.toString() ?? '',
+          location: job['area'],
+          status: job['status'],
+          appliedWorkerIds: const [],
+          acceptedWorkerIds: const [],
+          requiredSkillIds: List<String>.from(job['skills'] ?? []),
+          createdAt: DateTime.now(),
+        ),
+      );
       debugPrint('Created job: ${job['title']}');
     } catch (e) {
       debugPrint('⚠️  Job creation error: $e');
@@ -394,7 +395,7 @@ class SeedDataService {
           (w) => {
             'nic': w['nic'] as String,
             'pin': '1234',
-            'name': '${w['firstName']} ${w['lastName']}' as String,
+            'name': '${w['firstName']} ${w['lastName']}',
           },
         )
         .toList();

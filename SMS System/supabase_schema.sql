@@ -24,6 +24,7 @@ create table if not exists public.users (
     language text default 'si',
     verified boolean default false,
     profile_photo_url text,
+    portfolio_photo_urls text[] default '{}',
     rating numeric(3,2) default 0,
     completed_jobs_count integer default 0,
     abandoned_jobs_count integer default 0,
@@ -148,6 +149,39 @@ create index if not exists idx_applications_worker_nic on public.applications (w
 create index if not exists idx_messages_receiver_nic on public.messages (receiver_nic);
 create index if not exists idx_reviews_worker_nic on public.reviews (worker_nic);
 create index if not exists idx_sms_messages_direction_status on public.sms_messages (direction, status);
+
+-- Public profile-photo storage for the mobile app.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+    'profile-photos',
+    'profile-photos',
+    true,
+    5242880,
+    array['image/jpeg', 'image/png', 'image/webp']
+)
+on conflict (id) do update set
+    public = excluded.public,
+    file_size_limit = excluded.file_size_limit,
+    allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "Public profile photo read" on storage.objects;
+create policy "Public profile photo read"
+on storage.objects for select
+to public
+using (bucket_id = 'profile-photos');
+
+drop policy if exists "Public profile photo upload" on storage.objects;
+create policy "Public profile photo upload"
+on storage.objects for insert
+to public
+with check (bucket_id = 'profile-photos');
+
+drop policy if exists "Public profile photo update" on storage.objects;
+create policy "Public profile photo update"
+on storage.objects for update
+to public
+using (bucket_id = 'profile-photos')
+with check (bucket_id = 'profile-photos');
 
 -- Disable Row Level Security on all tables to allow public REST API access without active session policies (standard for the prototype)
 alter table public.users disable row level security;

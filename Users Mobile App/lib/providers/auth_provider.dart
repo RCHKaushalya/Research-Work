@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/app_user.dart';
+import '../services/location_service.dart';
 import '../services/supabase_service.dart';
 
 class AuthResult {
@@ -87,8 +88,8 @@ class AuthProvider extends ChangeNotifier {
         'phone': user.phone,
         'password_hash': user.pin,
         'language': 'si', // Default
-        'district': user.districtName ?? '',
-        'ds_area': user.dsAreaName ?? '',
+        'district': user.districtId ?? user.districtName ?? '',
+        'ds_area': user.dsAreaId ?? user.dsAreaName ?? '',
         'job_category_ids': user.jobCategoryIds,
         'skill_ids': user.skillIds,
         'rating': 0.0,
@@ -100,6 +101,7 @@ class AuthProvider extends ChangeNotifier {
         'is_blocked': 0,
         'availability_status': 'available',
         'profile_photo_url': null,
+        'portfolio_photo_urls': user.portfolioPhotos,
       };
 
       await SupabaseService.registerNicPinUser(userData);
@@ -118,23 +120,52 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> uploadProfilePhoto(String filePath) async {
+  Future<bool> uploadProfilePhoto({
+    required Uint8List bytes,
+    required String fileName,
+  }) async {
     if (_currentUser == null) return false;
     try {
-      final fileUri = Uri.tryParse(filePath);
-      if (fileUri != null && fileUri.hasScheme) {
-        await SupabaseService.saveUserProfile(_currentUser!.nic, {
-          'profile_photo_url': filePath,
-        });
-        _currentUser = _currentUser!.copyWith(profilePhotoPath: filePath);
-        notifyListeners();
-        return true;
-      }
-      if (kDebugMode) {
-        debugPrint('Profile photo upload is not configured for local paths.');
-      }
+      final publicUrl = await SupabaseService.uploadProfilePhoto(
+        nic: _currentUser!.nic,
+        bytes: bytes,
+        fileName: fileName,
+      );
+
+      await SupabaseService.saveUserProfile(_currentUser!.nic, {
+        'profile_photo_url': publicUrl,
+      });
+      _currentUser = _currentUser!.copyWith(profilePhotoPath: publicUrl);
+      notifyListeners();
+      return true;
     } catch (e) {
       debugPrint('Photo upload error: $e');
+    }
+    return false;
+  }
+
+  Future<bool> uploadPortfolioPhoto({
+    required Uint8List bytes,
+    required String fileName,
+  }) async {
+    if (_currentUser == null) return false;
+    try {
+      final publicUrl = await SupabaseService.uploadPortfolioPhoto(
+        nic: _currentUser!.nic,
+        bytes: bytes,
+        fileName: fileName,
+      );
+      final portfolioPhotos = [..._currentUser!.portfolioPhotos, publicUrl];
+
+      await SupabaseService.saveUserProfile(_currentUser!.nic, {
+        'portfolio_photo_urls': portfolioPhotos,
+      });
+
+      _currentUser = _currentUser!.copyWith(portfolioPhotos: portfolioPhotos);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('Portfolio upload error: $e');
     }
     return false;
   }
@@ -143,10 +174,13 @@ class AuthProvider extends ChangeNotifier {
     final data = {
       'first_name': user.firstName,
       'last_name': user.lastName,
-      'district': user.districtName,
-      'ds_area': user.dsAreaName,
+      'phone': user.phone,
+      'district': user.districtId ?? user.districtName,
+      'ds_area': user.dsAreaId ?? user.dsAreaName,
       'job_category_ids': user.jobCategoryIds,
       'skill_ids': user.skillIds,
+      'profile_photo_url': user.profilePhotoPath,
+      'portfolio_photo_urls': user.portfolioPhotos,
     };
 
     if (!SupabaseService.isConfigured) {
@@ -163,28 +197,42 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  void saveLocalUser(AppUser user) {
+    _currentUser = user;
+    notifyListeners();
+  }
+
   Future<void> logout() async {
     _currentUser = null;
     notifyListeners();
   }
 
   AppUser _mapBackendUserToAppUser(Map<String, dynamic> data) {
+    final locationService = LocationService();
+    final districtId = (data['district'] ?? '').toString();
+    final dsAreaId = (data['ds_area'] ?? '').toString();
+
     return AppUser(
       nic: data['nic'] ?? '',
       firstName: data['first_name'] ?? '',
       lastName: data['last_name'] ?? '',
       phone: data['phone'] ?? '',
       pin: '',
-      districtName: data['district'] ?? '',
-      dsAreaName: data['ds_area'] ?? '',
+      districtId: districtId,
+      districtName: locationService.getDistrictName(districtId),
+      dsAreaId: dsAreaId,
+      dsAreaName: locationService.getDSAreaName(dsAreaId, districtId),
       jobCategoryIds: List<String>.from(data['job_category_ids'] ?? []),
       jobCategoryNames: [],
       skillIds: List<String>.from(data['skill_ids'] ?? []),
       skillNames: [],
       profilePhotoPath: data['profile_photo_url'] ?? data['profile_photo_path'],
-      rating: (data['rating'] ?? 0.0).toDouble(),
-      completedJobsCount: data['completed_jobs_count'] ?? 0,
-      abandonedJobsCount: data['abandoned_jobs_count'] ?? 0,
+      portfolioPhotos: List<String>.from(
+        data['portfolio_photo_urls'] ?? data['portfolioPhotos'] ?? [],
+      ),
+      rating: _toDouble(data['rating']),
+      completedJobsCount: _toInt(data['completed_jobs_count']),
+      abandonedJobsCount: _toInt(data['abandoned_jobs_count']),
       reviews: (data['reviews'] as List? ?? [])
           .map((r) => Review.fromMap(r))
           .toList(),
@@ -211,11 +259,44 @@ class AuthProvider extends ChangeNotifier {
     return users;
   }
 
+  Future<List<AppUser>> searchUsers(String query) async {
+    final trimmed = query.trim().toLowerCase();
+    if (trimmed.isEmpty || !SupabaseService.isConfigured) {
+      return [];
+    }
+
+    final rows = await SupabaseService.fetchUsers(limit: 150);
+    return rows.map(_mapBackendUserToAppUser).where((user) {
+      final haystack = [
+        user.nic,
+        user.firstName,
+        user.lastName,
+        user.fullName,
+        user.phone,
+        user.districtName ?? '',
+        user.dsAreaName ?? '',
+        ...user.jobCategoryIds,
+        ...user.skillIds,
+      ].join(' ').toLowerCase();
+      return haystack.contains(trimmed);
+    }).toList();
+  }
+
   Future<void> addReview(String workerId, Review review) async {
     if (!SupabaseService.isConfigured) {
       return;
     }
 
     await SupabaseService.addReview(workerId, review);
+  }
+
+  double _toDouble(dynamic value) {
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  int _toInt(dynamic value) {
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
   }
 }

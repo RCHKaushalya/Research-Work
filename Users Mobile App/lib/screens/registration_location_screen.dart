@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/app_user.dart';
-import '../providers/auth_provider.dart';
 import '../providers/localization_provider.dart';
 import '../services/location_service.dart';
 import 'registration_job_category_screen.dart';
@@ -34,9 +33,9 @@ class _RegistrationLocationScreenState
   Future<void> _submit() async {
     final lp = context.read<LocalizationProvider>();
     if (_selectedDistrictId == null || _selectedDSAreaId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(lp.translate('error'))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(lp.translate('error'))));
       return;
     }
 
@@ -86,10 +85,9 @@ class _RegistrationLocationScreenState
   Widget build(BuildContext context) {
     return Consumer<LocalizationProvider>(
       builder: (context, lp, _) {
+        _locationService.updateLocale(lp.currentLocale.languageCode);
         return Scaffold(
-          appBar: AppBar(
-            title: Text(lp.translate('location')),
-          ),
+          appBar: AppBar(title: Text(lp.translate('location'))),
           body: FutureBuilder<void>(
             future: _initFuture,
             builder: (context, snapshot) {
@@ -168,7 +166,9 @@ class _RegistrationLocationScreenState
                       child: ElevatedButton(
                         onPressed: _submitting ? null : _submit,
                         child: _submitting
-                            ? const CircularProgressIndicator(color: Colors.white)
+                            ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
                             : Text(lp.translate('nextButton')),
                       ),
                     ),

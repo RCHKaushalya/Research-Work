@@ -54,6 +54,22 @@ Example Android build:
 flutter build apk --release --dart-define=SMS_GATEWAY_API_KEY=your-sms-gateway-api-key --dart-define=SMS_GATEWAY_DEVICES=10959|1
 ```
 
+## Viva Demo Seed Data
+
+Seed the shared Supabase platform from this folder:
+
+```powershell
+.\tool\seed_viva_demo_supabase.ps1
+```
+
+Main demo details:
+
+- Admin Portal PIN: `9421`
+- Sinhala mobile user: `200100000001 / 1234`
+- Tamil mobile user: `200200000001 / 1234`
+- Sinhala volunteer: `COL-SI-001 / 123456`
+- Tamil volunteer: `COL-TA-001 / 123456`
+
 ## Notes
 
 - The mobile app does not call `SMS System` for SMS sending.

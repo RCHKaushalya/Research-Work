@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -7,7 +8,6 @@ import '../providers/auth_provider.dart';
 import '../providers/localization_provider.dart';
 import '../providers/job_provider.dart';
 import 'landing_screen.dart';
-import 'registration_start_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -17,9 +17,24 @@ class ProfileScreen extends StatelessWidget {
     AuthProvider auth,
   ) async {
     final lp = context.read<LocalizationProvider>();
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(lp.translate('notImplemented'))));
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile == null) return;
+
+    final uploaded = await auth.uploadPortfolioPhoto(
+      bytes: await pickedFile.readAsBytes(),
+      fileName: pickedFile.name,
+    );
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            uploaded ? lp.translate('success') : lp.translate('error'),
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _updateProfilePhoto(
@@ -29,7 +44,15 @@ class ProfileScreen extends StatelessWidget {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
-      await auth.uploadProfilePhoto(pickedFile.path);
+      final uploaded = await auth.uploadProfilePhoto(
+        bytes: await pickedFile.readAsBytes(),
+        fileName: pickedFile.name,
+      );
+      if (!uploaded && auth.currentUser != null) {
+        auth.saveLocalUser(
+          auth.currentUser!.copyWith(profilePhotoPath: pickedFile.path),
+        );
+      }
     }
   }
 
@@ -311,6 +334,7 @@ class ProfileScreen extends StatelessWidget {
   ImageProvider? _getImageProvider(String? path) {
     if (path == null) return null;
     if (path.startsWith('http')) return NetworkImage(path);
+    if (kIsWeb) return null;
     return FileImage(File(path));
   }
 

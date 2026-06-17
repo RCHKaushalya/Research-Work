@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -24,20 +25,23 @@ class SettingsScreen extends StatelessWidget {
           const SnackBar(content: Text('Uploading profile photo...')),
         );
       }
-      // Upload the photo to the server
-      final success = await auth.uploadProfilePhoto(pickedFile.path);
+      final success = await auth.uploadProfilePhoto(
+        bytes: await pickedFile.readAsBytes(),
+        fileName: pickedFile.name,
+      );
       if (success && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profile photo updated successfully!')),
         );
       } else if (context.mounted) {
-        // Fallback: save the local file path if server upload fails
         final updatedUser = auth.currentUser!.copyWith(
           profilePhotoPath: pickedFile.path,
         );
-        await auth.saveUser(updatedUser);
+        auth.saveLocalUser(updatedUser);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile photo saved locally.')),
+          const SnackBar(
+            content: Text('Photo preview saved for this session.'),
+          ),
         );
       }
     }
@@ -187,6 +191,7 @@ class SettingsScreen extends StatelessWidget {
   ImageProvider? _getImageProvider(String? path) {
     if (path == null) return null;
     if (path.startsWith('http')) return NetworkImage(path);
+    if (kIsWeb) return null;
     return FileImage(File(path));
   }
 

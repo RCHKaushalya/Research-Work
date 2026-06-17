@@ -15,24 +15,17 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  List<AppUser> _allUsers =
-      []; // In a real app, this would be fetched from a server
 
   @override
-  void initState() {
-    super.initState();
-    // Simulate fetching all users for search (excluding current user)
-    // In our Hive implementation, we can actually fetch them from the box.
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final localizationProvider = context.watch<LocalizationProvider>();
     final authProvider = context.watch<AuthProvider>();
-
-    // We'll mock some searchable users since we don't have a 'getAllUsers' method yet
-    // Actually, let's just use the current user as a searchable item if we search for them,
-    // and maybe the demo user.
 
     return Scaffold(
       appBar: AppBar(
@@ -91,68 +84,54 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildResultsList(AuthProvider auth, LocalizationProvider lp) {
-    // For now, let's just search the current user or a demo user to show it works
-    // In a real app, AuthProvider would have a 'searchUsers' method.
-    final currentUser = auth.currentUser;
-    List<AppUser> results = [];
+    return FutureBuilder<List<AppUser>>(
+      future: auth.searchUsers(_searchQuery),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    if (currentUser != null) {
-      if (currentUser.fullName.toLowerCase().contains(
-            _searchQuery.toLowerCase(),
-          ) ||
-          currentUser.nic.contains(_searchQuery)) {
-        results.add(currentUser);
-      }
-    }
+        final currentNic = auth.currentUser?.nic;
+        final results = (snapshot.data ?? [])
+            .where((user) => user.nic != currentNic)
+            .toList();
 
-    // Mock additional results
-    if ("Nimal Silva".toLowerCase().contains(_searchQuery.toLowerCase())) {
-      results.add(
-        AppUser(
-          nic: '851234567V',
-          firstName: 'Nimal',
-          lastName: 'Silva',
-          phone: '0771234567',
-          pin: '1234',
-          districtName: 'Colombo',
-          dsAreaName: 'Colombo 03',
-          jobCategoryIds: ['C01'],
-          jobCategoryNames: ['Construction'],
-          skillIds: ['S101'],
-          skillNames: ['Masonry'],
-        ),
-      );
-    }
+        if (results.isEmpty) {
+          return Center(child: Text(lp.translate('noJobsFound')));
+        }
 
-    if (results.isEmpty) {
-      return Center(child: Text(lp.translate('noJobsFound')));
-    }
-
-    return ListView.builder(
-      itemCount: results.length,
-      itemBuilder: (context, index) {
-        final user = results[index];
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: Colors.blue.shade50,
-              child: const Icon(Icons.person, color: Colors.blue),
-            ),
-            title: Text(user.fullName),
-            subtitle: Text(
-              '${user.districtName} • ${user.skillNames.take(2).join(", ")}',
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CandidateProfileScreen(user: user),
+        return ListView.builder(
+          itemCount: results.length,
+          itemBuilder: (context, index) {
+            final user = results[index];
+            return Card(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: Colors.blue.shade50,
+                  backgroundImage: (user.profilePhotoPath ?? '').isNotEmpty
+                      ? NetworkImage(user.profilePhotoPath!)
+                      : null,
+                  child: (user.profilePhotoPath ?? '').isEmpty
+                      ? const Icon(Icons.person, color: Colors.blue)
+                      : null,
                 ),
-              );
-            },
-          ),
+                title: Text(user.fullName),
+                subtitle: Text(
+                  '${user.dsAreaName ?? user.districtName ?? ''} • ${user.skillIds.take(2).join(", ")}',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CandidateProfileScreen(user: user),
+                    ),
+                  );
+                },
+              ),
+            );
+          },
         );
       },
     );
