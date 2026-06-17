@@ -150,13 +150,32 @@ class JobProvider extends ChangeNotifier {
     return _jobs.where((job) => job.employerId == userId).toList();
   }
 
-  Future<void> addJob(Job job) async {
+  /// Creates a job on Supabase and returns the persisted [Job] with the
+  /// server-generated ID. Returns null if Supabase is not configured.
+  Future<Job?> addJob(Job job) async {
     if (!SupabaseService.isConfigured) {
-      return;
+      return null;
     }
 
-    await SupabaseService.createJob(job);
+    final row = await SupabaseService.createJob(job);
     await fetchJobs();
+
+    // Build a Job from the returned row so the caller has the real UUID.
+    return Job(
+      id: (row['id'] ?? job.id).toString(),
+      title: (row['title'] ?? job.title).toString(),
+      description: (row['description'] ?? job.description).toString(),
+      employerId: (row['employer_nic'] ?? job.employerId).toString(),
+      employerName: job.employerName,
+      categoryId: (row['category_id'] ?? job.categoryId).toString(),
+      categoryName: (row['category'] ?? job.categoryName).toString(),
+      location: (row['location'] ?? job.location).toString(),
+      status: (row['status'] ?? job.status).toString(),
+      requiredSkillIds: job.requiredSkillIds,
+      createdAt: row['created_at'] != null
+          ? DateTime.tryParse(row['created_at'].toString()) ?? job.createdAt
+          : job.createdAt,
+    );
   }
 
   Future<void> addPayment(String jobId, JobPayment payment) async {

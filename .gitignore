@@ -1,29 +1,80 @@
-# Python
-Backend/.venv/
-Backend/__pycache__/
-Backend/*.db
-Backend/uploads/
-Backend/.env
+# Local secrets and machine-specific config
+**/.env
+**/.env.local
+**/.env.development.local
+**/.env.production.local
+Admin Portal/config.js
+Volunteer Panel/config.js
+config.js
+*.pem
+*.key
+*.p12
 
-# Flutter
+# Python virtual environments and caches
+.venv/
+venv/
+env/
+**/.venv/
+**/venv/
+**/env/
+**/__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Runtime data, uploads, local databases, and logs
+**/uploads/
+*.db
+*.sqlite
+*.sqlite3
+*.log
+logs/
+
+# Flutter and Dart
 Users Mobile App/.dart_tool/
 Users Mobile App/.flutter-plugins
 Users Mobile App/.flutter-plugins-dependencies
 Users Mobile App/.packages
 Users Mobile App/build/
+Users Mobile App/coverage/
+Users Mobile App/android/.gradle/
+Users Mobile App/android/app/build/
 Users Mobile App/ios/Flutter/Generated.xcconfig
 Users Mobile App/ios/Flutter/flutter_export_environment.sh
+Users Mobile App/ios/Flutter/Flutter.podspec
+Users Mobile App/ios/Pods/
+Users Mobile App/ios/.symlinks/
+Users Mobile App/ios/Runner.xcworkspace/xcuserdata/
+Users Mobile App/macos/Flutter/GeneratedPluginRegistrant.swift
+Users Mobile App/macos/Pods/
+Users Mobile App/macos/.symlinks/
+Users Mobile App/linux/flutter/ephemeral/
+Users Mobile App/windows/flutter/ephemeral/
 Users Mobile App/android/app/src/main/res/drawable-*/
 Users Mobile App/android/app/src/main/res/mipmap-*/
 
-# OS
+# JavaScript package outputs if added later
+node_modules/
+dist/
+.cache/
+
+# Desktop packaging outputs
+build/
+dist/
+*.spec
+*.exe
+*.msi
+*.dmg
+
+# Old/generated folders that should not be pushed
+SMS Gateway/
+
+# Editor and OS files
+.idea/
+.vscode/
+*.code-workspace
 .DS_Store
 Thumbs.db
-
-# Standalone envs
-Employee Management System/.env
-Employee Management System/.venv/
-Employee Management System/__pycache__/
-
-# Untracked build/junk paths
-SMS Gateway/
+desktop.ini

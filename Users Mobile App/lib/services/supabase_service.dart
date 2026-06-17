@@ -38,7 +38,9 @@ class SupabaseService {
         .toList();
   }
 
-  static Future<void> createJob(Job job) async {
+  /// Creates a job and returns the full row as created by the database
+  /// (including the server-generated UUID). Throws on failure.
+  static Future<Map<String, dynamic>> createJob(Job job) async {
     if (!isConfigured) {
       throw StateError('Supabase is not configured.');
     }
@@ -58,8 +60,65 @@ class SupabaseService {
     };
     if (job.id.isNotEmpty) payload['id'] = job.id;
 
-    await client.from('jobs').insert(payload);
+    // .select().single() causes Supabase to return the newly inserted row
+    final row = await client
+        .from('jobs')
+        .insert(payload)
+        .select()
+        .single();
+    return Map<String, dynamic>.from(row as Map);
+  }
 
+  /// Returns workers whose district/ds_area and skills match the job.
+  /// Used after posting a job to build the SMS notification list.
+  static Future<List<Map<String, dynamic>>> fetchMatchingWorkers({
+    required String district,
+    required String dsArea,
+    required List<String> skillIds,
+  }) async {
+    if (!isConfigured) return [];
+
+    // Fetch all workers in the same district (broad location filter).
+    // Fine-grained ds_area and skill filtering is done in Dart below
+    // because Supabase REST doesn't support array-overlap in a single
+    // simple query without RPC.
+    final response = await client
+        .from('users')
+        .select('nic, phone, district, ds_area, skill_ids')
+        .eq('district', district);
+
+    final rows = response as List<dynamic>;
+    final matches = <Map<String, dynamic>>[];
+
+    for (final raw in rows) {
+      final row = Map<String, dynamic>.from(raw as Map);
+      final phone = (row['phone'] ?? '').toString();
+      if (phone.isEmpty) continue; // must have a phone number
+
+      // DS area filter: if a DS area was given, the worker must be in
+      // either the same DS area or the broader district.
+      if (dsArea.isNotEmpty) {
+        final workerDs = (row['ds_area'] ?? '').toString().toLowerCase();
+        final workerDistrict =
+            (row['district'] ?? '').toString().toLowerCase();
+        if (workerDs != dsArea.toLowerCase() &&
+            workerDistrict != district.toLowerCase()) {
+          continue;
+        }
+      }
+
+      // Skill filter: at least one skill must overlap.
+      if (skillIds.isNotEmpty) {
+        final workerSkills = _stringList(row['skill_ids']);
+        final hasOverlap =
+            skillIds.any((s) => workerSkills.contains(s));
+        if (!hasOverlap) continue;
+      }
+
+      matches.add(row);
+    }
+
+    return matches;
   }
 
   static Future<Map<String, dynamic>?> authenticateNicPin(

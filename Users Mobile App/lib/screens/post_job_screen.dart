@@ -6,9 +6,10 @@ import '../data/registration_catalog.dart';
 import '../models/job.dart';
 import '../providers/auth_provider.dart';
 import '../providers/job_provider.dart';
-import '../providers/alerts_provider.dart';
 import '../providers/localization_provider.dart';
 import '../services/location_service.dart';
+import '../services/sms_gateway_service.dart';
+import '../services/supabase_service.dart';
 
 class PostJobScreen extends StatefulWidget {
   const PostJobScreen({super.key});
@@ -60,26 +61,36 @@ class _PostJobScreenState extends State<PostJobScreen> {
   Future<void> _submitJob() async {
     final lp = context.read<LocalizationProvider>();
     if (!_formKey.currentState!.validate()) return;
-    
-    if (_selectedCategoryId == null || _selectedDistrictId == null || _selectedDsAreaId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(lp.translate('error'))),
-      );
+
+    if (_selectedCategoryId == null ||
+        _selectedDistrictId == null ||
+        _selectedDsAreaId == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(lp.translate('error'))));
       return;
     }
 
-    setState(() {
-      _isSubmitting = true;
-    });
+    setState(() => _isSubmitting = true);
 
     final authProvider = context.read<AuthProvider>();
     final jobProvider = context.read<JobProvider>();
     final user = authProvider.currentUser;
+    if (user == null) {
+      setState(() => _isSubmitting = false);
+      return;
+    }
 
-    if (user == null) return;
-
-    final category = RegistrationCatalog.jobCategories.firstWhere((c) => c.id == _selectedCategoryId);
+    final category = RegistrationCatalog.jobCategories.firstWhere(
+      (c) => c.id == _selectedCategoryId,
+    );
     final district = _districts.firstWhere((d) => d.id == _selectedDistrictId);
+    final dsArea = _dsAreas.isNotEmpty
+        ? _dsAreas.firstWhere(
+            (a) => a.id == _selectedDsAreaId,
+            orElse: () => _dsAreas.first,
+          )
+        : null;
 
     final newJob = Job(
       id: const Uuid().v4(),
@@ -88,44 +99,104 @@ class _PostJobScreenState extends State<PostJobScreen> {
       employerId: user.nic,
       employerName: user.fullName,
       categoryId: category.id,
-      categoryName: category.labelFor(lp.currentLocale.languageCode), 
+      categoryName: category.labelFor(lp.currentLocale.languageCode),
       location: district.name,
       requiredSkillIds: _selectedSkillIds.toList(),
       createdAt: DateTime.now(),
     );
 
-    jobProvider.addJob(newJob);
+    try {
+      // 1. Save job to Supabase and get the persisted row (with real UUID)
+      final createdJob = await jobProvider.addJob(newJob);
 
-    // Simulation: Trigger an alert
-    final matchScore = jobProvider.getMatchScore(newJob, user);
-    if (matchScore >= 75) {
-      if (mounted) {
-        context.read<AlertsProvider>().addNotification(
-          lp.translate('alerts'),
-          '${newJob.title}: ${matchScore.toInt()}% ${lp.translate('matchScore')}',
+      if (createdJob != null && mounted) {
+        // 2. Notify matching workers in the area via the SMS Gateway API.
+        final notifiedCount = await _notifyMatchingWorkers(
+          job: createdJob,
+          district: district.name,
+          dsArea: dsArea?.name ?? '',
         );
+
+        final message = notifiedCount > 0
+            ? '${lp.translate('success')} — $notifiedCount workers notified via SMS.'
+            : lp.translate('success');
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+      } else if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(lp.translate('success'))));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('${lp.translate('error')}: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+
+    if (mounted) Navigator.pop(context);
+  }
+
+  /// Queries workers matching [district] / [dsArea] / skill overlap,
+  /// then sends an SMS notification via the SMS Gateway API for each.
+  /// Returns the number of workers successfully notified.
+  Future<int> _notifyMatchingWorkers({
+    required Job job,
+    required String district,
+    required String dsArea,
+  }) async {
+    final jobPrefix = job.id.length >= 4 ? job.id.substring(0, 4) : job.id;
+
+    List<Map<String, dynamic>> matchingWorkers;
+    try {
+      matchingWorkers = await SupabaseService.fetchMatchingWorkers(
+        district: district,
+        dsArea: dsArea,
+        skillIds: job.requiredSkillIds,
+      );
+    } catch (_) {
+      return 0;
+    }
+
+    // Exclude the employer themselves
+    matchingWorkers = matchingWorkers
+        .where((w) => w['nic'] != job.employerId)
+        .toList();
+
+    int notifiedCount = 0;
+    final smsMessage =
+        'New Job: "${job.title}" in $district. '
+        'Reply "$jobPrefix 1" to apply. (SMS users only)';
+
+    for (final worker in matchingWorkers) {
+      final phone = (worker['phone'] ?? '').toString();
+      if (phone.isEmpty) continue;
+
+      try {
+        final sent = await SmsGatewayService.sendSms(
+          phoneNumber: phone,
+          message: smsMessage,
+        );
+        if (sent) notifiedCount++;
+      } catch (_) {
+        // Non-fatal: continue notifying remaining workers
       }
     }
 
-    setState(() {
-      _isSubmitting = false;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(lp.translate('success'))),
-    );
-
-    Navigator.pop(context);
+    return notifiedCount;
   }
 
   @override
   Widget build(BuildContext context) {
     final lp = context.watch<LocalizationProvider>();
-    
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(lp.translate('postJob')),
-      ),
+      appBar: AppBar(title: Text(lp.translate('postJob'))),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Form(
@@ -135,10 +206,12 @@ class _PostJobScreenState extends State<PostJobScreen> {
             children: [
               Text(
                 lp.translate('jobTab'),
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
-              
+
               TextFormField(
                 controller: _titleController,
                 decoration: InputDecoration(
@@ -146,10 +219,12 @@ class _PostJobScreenState extends State<PostJobScreen> {
                   border: const OutlineInputBorder(),
                   prefixIcon: const Icon(Icons.work),
                 ),
-                validator: (value) => value == null || value.isEmpty ? lp.translate('error') : null,
+                validator: (value) => value == null || value.isEmpty
+                    ? lp.translate('error')
+                    : null,
               ),
               const SizedBox(height: 16),
-              
+
               TextFormField(
                 controller: _descController,
                 maxLines: 4,
@@ -158,27 +233,36 @@ class _PostJobScreenState extends State<PostJobScreen> {
                   border: const OutlineInputBorder(),
                   alignLabelWithHint: true,
                 ),
-                validator: (value) => value == null || value.isEmpty ? lp.translate('error') : null,
+                validator: (value) => value == null || value.isEmpty
+                    ? lp.translate('error')
+                    : null,
               ),
               const SizedBox(height: 24),
-              
+
               Text(
                 lp.translate('jobCategory'),
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              
+
               DropdownButtonFormField<String>(
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 16,
+                  ),
                 ),
                 hint: Text(lp.translate('selectCategory')),
                 value: _selectedCategoryId,
                 items: RegistrationCatalog.jobCategories.map((cat) {
                   return DropdownMenuItem(
                     value: cat.id,
-                    child: Text('${cat.icon} ${cat.labelFor(lp.currentLocale.languageCode)}'),
+                    child: Text(
+                      '${cat.icon} ${cat.labelFor(lp.currentLocale.languageCode)}',
+                    ),
                   );
                 }).toList(),
                 onChanged: (val) {
@@ -188,44 +272,57 @@ class _PostJobScreenState extends State<PostJobScreen> {
                   });
                 },
               ),
-              
+
               if (_selectedCategoryId != null) ...[
                 const SizedBox(height: 24),
                 Text(
                   lp.translate('skills'),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: (RegistrationCatalog.skillsByCategory[_selectedCategoryId] ?? []).map((skill) {
-                    final isSelected = _selectedSkillIds.contains(skill.id);
-                    return FilterChip(
-                      label: Text(skill.labelFor(lp.currentLocale.languageCode)),
-                      selected: isSelected,
-                      onSelected: (selected) {
-                        setState(() {
-                          if (selected) {
-                            _selectedSkillIds.add(skill.id);
-                          } else {
-                            _selectedSkillIds.remove(skill.id);
-                          }
-                        });
-                      },
-                    );
-                  }).toList(),
+                  children:
+                      (RegistrationCatalog
+                                  .skillsByCategory[_selectedCategoryId] ??
+                              [])
+                          .map((skill) {
+                            final isSelected = _selectedSkillIds.contains(
+                              skill.id,
+                            );
+                            return FilterChip(
+                              label: Text(
+                                skill.labelFor(lp.currentLocale.languageCode),
+                              ),
+                              selected: isSelected,
+                              onSelected: (selected) {
+                                setState(() {
+                                  if (selected) {
+                                    _selectedSkillIds.add(skill.id);
+                                  } else {
+                                    _selectedSkillIds.remove(skill.id);
+                                  }
+                                });
+                              },
+                            );
+                          })
+                          .toList(),
                 ),
               ],
-              
+
               const SizedBox(height: 24),
-              
+
               Text(
                 lp.translate('location'),
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              
+
               DropdownButtonFormField<String>(
                 decoration: InputDecoration(
                   border: const OutlineInputBorder(),
@@ -238,7 +335,7 @@ class _PostJobScreenState extends State<PostJobScreen> {
                 onChanged: _onDistrictChanged,
               ),
               const SizedBox(height: 16),
-              
+
               DropdownButtonFormField<String>(
                 decoration: InputDecoration(
                   border: const OutlineInputBorder(),
@@ -250,7 +347,7 @@ class _PostJobScreenState extends State<PostJobScreen> {
                 }).toList(),
                 onChanged: (val) => setState(() => _selectedDsAreaId = val),
               ),
-              
+
               const SizedBox(height: 40),
               SizedBox(
                 width: double.infinity,
@@ -268,7 +365,10 @@ class _PostJobScreenState extends State<PostJobScreen> {
                       ? const CircularProgressIndicator(color: Colors.white)
                       : Text(
                           lp.translate('postJobButton'),
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                 ),
               ),

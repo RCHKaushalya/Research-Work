@@ -5,7 +5,10 @@ const supabaseUrl = 'https://pkzdexdkgjjejctsgnbz.supabase.co';
 const supabaseKey = 'sb_publishable_m6X8NGNqr0JFKSH5VcV1rw_rtiCKaXt';
 const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-let backendUrl = 'http://localhost:8000'; // Default fallback
+const appConfig = window.APP_CONFIG || {};
+const smsGatewayUrl = appConfig.SMS_GATEWAY_URL || 'https://app.sms-gateway.app/services/send.php';
+const smsGatewayKey = appConfig.SMS_GATEWAY_API_KEY || '';
+const smsGatewayDevices = appConfig.SMS_GATEWAY_DEVICES || '10959|1';
 
 // DOM Elements
 const loginContainer = document.getElementById('login-container');
@@ -54,24 +57,17 @@ queueSmsBtn.addEventListener('click', async () => {
     if (!message) return;
 
     try {
-        const response = await fetch(`${backendUrl}/sms/send`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                phone_number: phone,
-                message: message
-            })
-        });
-        
-        if (response.ok) {
+        const result = await sendSmsViaGateway(phone, message);
+
+        if (result.success) {
             alert('SMS sent successfully via Gateway!');
             loadAllData();
         } else {
-            alert('Failed to send SMS: ' + await response.text());
+            alert('Failed to send SMS: ' + result.error);
         }
     } catch(e) {
         console.error(e);
-        alert("Error connecting to Backend for SMS");
+        alert("Error connecting to SMS Gateway");
     }
 });
 
@@ -87,19 +83,13 @@ broadcastBtn.addEventListener('click', async () => {
         const requests = [];
         users.forEach(user => {
             if (user.phone) {
-                requests.push(fetch(`${backendUrl}/sms/send`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        phone_number: user.phone,
-                        message: message
-                    })
-                }));
+                requests.push(sendSmsViaGateway(user.phone, message));
             }
         });
 
-        await Promise.all(requests);
-        alert('Broadcast sent to ' + requests.length + ' users!');
+        const results = await Promise.all(requests);
+        const sentCount = results.filter((result) => result.success).length;
+        alert('Broadcast sent to ' + sentCount + ' of ' + requests.length + ' users!');
         broadcastMsgInput.value = '';
         loadAllData();
     } catch (e) {
@@ -107,6 +97,47 @@ broadcastBtn.addEventListener('click', async () => {
         alert('Failed to send broadcast');
     }
 });
+
+function normalizePhone(phone) {
+    phone = String(phone || '').trim().replace(/[\s().-]+/g, '');
+    if (!phone) return phone;
+    if (phone.startsWith('+')) return phone;
+    if (phone.startsWith('0')) return '+94' + phone.substring(1);
+    if (phone.startsWith('94')) return '+' + phone;
+    return '+' + phone;
+}
+
+async function sendSmsViaGateway(phone, message) {
+    if (!smsGatewayKey) {
+        return { success: false, error: 'SMS_GATEWAY_API_KEY is missing in config.js.' };
+    }
+
+    const params = new URLSearchParams({
+        key: smsGatewayKey,
+        number: normalizePhone(phone),
+        message,
+        devices: smsGatewayDevices,
+        type: 'sms',
+        prioritize: '0'
+    });
+    const url = `${smsGatewayUrl}?${params.toString()}`;
+
+    try {
+        const response = await fetch(url);
+        const payload = await response.json();
+        return {
+            success: response.ok && payload.success === true,
+            error: payload.error || response.statusText || 'Gateway rejected the message'
+        };
+    } catch (error) {
+        try {
+            await fetch(url, { mode: 'no-cors' });
+            return { success: true, opaque: true };
+        } catch {
+            return { success: false, error: error.message || 'Gateway request failed' };
+        }
+    }
+}
 
 let refreshInterval = null;
 

@@ -1,120 +1,146 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Workforce Volunteer Panel</title>
-    <link rel="stylesheet" href="volunteer.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workforce Volunteer Panel</title>
+  <link rel="stylesheet" href="volunteer.css" />
 </head>
 <body>
-    <div id="login-view" class="shell shell-login">
-        <div class="hero-card">
-            <div class="hero-copy">
-                <span class="eyebrow">Volunteer Support</span>
-                <h1>Verify workers, answer support queries, and keep registrations moving.</h1>
-                <p>Approve pending users from SMS or registration flows and respond to support messages without leaving the panel.</p>
-            </div>
-            <div class="login-card card">
-                <h2>Volunteer Login</h2>
-                <p>Enter the volunteer PIN to continue.</p>
-                <label for="pin-input">Volunteer PIN</label>
-                <input id="pin-input" type="password" maxlength="6" placeholder="••••••" />
-                <button id="login-btn" class="button primary">Enter Panel</button>
-                <p id="error-msg" class="error"></p>
-            </div>
-        </div>
+
+<div id="login-view" class="shell shell-login">
+  <div class="hero-card">
+    <div class="hero-copy">
+      <span class="eyebrow">Volunteer Support</span>
+      <h1>Help non-smartphone users access the workforce platform.</h1>
+      <p>Approve registrations, approve job posts, register users, post jobs, apply jobs, and submit reviews.</p>
     </div>
 
-    <div id="panel-view" class="shell hidden">
-        <header class="topbar card">
-            <div>
-                <span class="eyebrow">Workforce Platform</span>
-                <h2>Volunteer Panel</h2>
-            </div>
-            <div class="topbar-actions">
-                <span id="pending-count-pill" class="pill">0 pending</span>
-                <button id="refresh-btn" class="button subtle">Refresh</button>
-                <button id="logout-btn" class="button outline">Logout</button>
-            </div>
-        </header>
+    <div class="login-card card">
+      <h2>Volunteer Login</h2>
 
-        <section class="stats-grid">
-            <div class="stat card">
-                <span class="label">Pending Registrations</span>
-                <strong id="stat-pending">0</strong>
-            </div>
-            <div class="stat card">
-                <span class="label">Verified Today</span>
-                <strong id="stat-verified">0</strong>
-            </div>
-            <div class="stat card">
-                <span class="label">Support Queries</span>
-                <strong id="stat-support">0</strong>
-            </div>
-        </section>
+      <label>Volunteer ID</label>
+      <input id="volunteer-id-input" type="text" placeholder="Example: TRI-SI-001" />
 
-        <section class="tabs card">
-            <button class="tab-btn active" data-tab="pending-tab">Pending Registrations</button>
-            <button class="tab-btn" data-tab="support-tab">Support Queries</button>
-        </section>
+      <label>Password</label>
+      <input id="password-input" type="password" placeholder="Password" />
 
-        <main>
-            <section id="pending-tab" class="tab-panel active">
-                <div class="panel-head">
-                    <div>
-                        <h3>Pending Worker Registrations</h3>
-                        <p>Approve workers who have submitted details via the app or SMS.</p>
-                    </div>
-                </div>
-                <div id="pending-list" class="cards-grid"></div>
-            </section>
+      <button id="login-btn" class="button primary">Login</button>
+      <p id="error-msg" class="error"></p>
+    </div>
+  </div>
+</div>
 
-            <section id="support-tab" class="tab-panel">
-                <div class="panel-head">
-                    <div>
-                        <h3>Support Queries</h3>
-                        <p>Review and respond to support requests from workers.</p>
-                    </div>
-                    <div class="support-form card inline-form">
-                        <input id="support-receiver" type="text" placeholder="Receiver NIC" />
-                        <input id="support-message" type="text" placeholder="Reply or guidance message" />
-                        <button id="support-send-btn" class="button primary">Send</button>
-                    </div>
-                </div>
-                <div id="support-list" class="support-list"></div>
-            </section>
-        </main>
+<div id="panel-view" class="shell hidden">
+  <header class="topbar card">
+    <div>
+      <span class="eyebrow">Workforce Platform</span>
+      <h2>Volunteer Panel</h2>
+      <p id="volunteer-info"></p>
     </div>
 
-    <template id="pending-card-template">
-        <article class="worker-card card">
-            <div class="worker-top">
-                <div>
-                    <h4 class="worker-name"></h4>
-                    <p class="worker-nic"></p>
-                </div>
-                <span class="status-badge">Pending</span>
-            </div>
-            <div class="worker-meta"></div>
-            <div class="worker-actions">
-                <button class="button primary verify-btn">Verify</button>
-            </div>
-        </article>
-    </template>
+    <div class="topbar-actions">
+      <span id="pending-count-pill" class="pill">0 pending</span>
+      <button id="refresh-btn" class="button subtle">Refresh</button>
+      <button id="logout-btn" class="button outline">Logout</button>
+    </div>
+  </header>
 
-    <template id="support-card-template">
-        <article class="support-card card">
-            <div class="support-top">
-                <div>
-                    <h4 class="support-title"></h4>
-                    <p class="support-channel"></p>
-                </div>
-                <span class="support-time"></span>
-            </div>
-            <p class="support-body"></p>
-        </article>
-    </template>
+  <section class="stats-grid">
+    <div class="stat card">
+      <span class="label">Pending Users</span>
+      <strong id="stat-pending-users">0</strong>
+    </div>
+    <div class="stat card">
+      <span class="label">Pending Jobs</span>
+      <strong id="stat-pending-jobs">0</strong>
+    </div>
+    <div class="stat card">
+      <span class="label">Approved Session</span>
+      <strong id="stat-approved">0</strong>
+    </div>
+  </section>
 
-    <script src="volunteer.js"></script>
+  <section class="tabs card">
+    <button class="tab-btn active" data-tab="pending-users-tab">Pending Users</button>
+    <button class="tab-btn" data-tab="pending-jobs-tab">Pending Jobs</button>
+    <button class="tab-btn" data-tab="register-user-tab">Register User</button>
+    <button class="tab-btn" data-tab="post-job-tab">Post Job</button>
+    <button class="tab-btn" data-tab="apply-job-tab">Apply Job</button>
+    <button class="tab-btn" data-tab="review-tab">Review Worker</button>
+  </section>
+
+  <main>
+    <section id="pending-users-tab" class="tab-panel active">
+      <h3>Pending User Registrations</h3>
+      <div id="pending-users-list" class="cards-grid"></div>
+    </section>
+
+    <section id="pending-jobs-tab" class="tab-panel">
+      <h3>Pending Job Posts</h3>
+      <div id="pending-jobs-list" class="cards-grid"></div>
+    </section>
+
+    <section id="register-user-tab" class="tab-panel">
+      <div class="form-card card">
+        <h3>Register Non-Smartphone User</h3>
+        <input id="reg-phone" placeholder="Phone number" />
+        <input id="reg-first-name" placeholder="First name" />
+        <input id="reg-last-name" placeholder="Last name" />
+        <input id="reg-district" placeholder="District" />
+        <input id="reg-ds-area" placeholder="DS Area" />
+        <select id="reg-language">
+          <option value="si">Sinhala</option>
+          <option value="ta">Tamil</option>
+        </select>
+        <button id="manual-register-btn" class="button primary">Register User</button>
+      </div>
+    </section>
+
+    <section id="post-job-tab" class="tab-panel">
+      <div class="form-card card">
+        <h3>Post Job for Employer</h3>
+        <input id="job-employer-name" placeholder="Employer name" />
+        <input id="job-employer-phone" placeholder="Employer phone" />
+        <input id="job-title" placeholder="Job title" />
+        <textarea id="job-description" placeholder="Job description"></textarea>
+        <input id="job-district" placeholder="District" />
+        <input id="job-ds-area" placeholder="DS Area" />
+        <input id="job-category" placeholder="Category" />
+        <input id="job-skills" placeholder="Required skills" />
+        <input id="job-payment" placeholder="Payment" />
+        <select id="job-language">
+          <option value="si">Sinhala</option>
+          <option value="ta">Tamil</option>
+        </select>
+        <button id="manual-job-btn" class="button primary">Post Job</button>
+      </div>
+    </section>
+
+    <section id="apply-job-tab" class="tab-panel">
+      <div class="form-card card">
+        <h3>Apply Job for Worker</h3>
+        <input id="apply-worker-phone" placeholder="Worker phone" />
+        <input id="apply-job-id" placeholder="Job ID" />
+        <textarea id="apply-note" placeholder="Note"></textarea>
+        <button id="apply-job-btn" class="button primary">Submit Application</button>
+      </div>
+    </section>
+
+    <section id="review-tab" class="tab-panel">
+      <div class="form-card card">
+        <h3>Give Worker Review</h3>
+        <input id="review-worker-phone" placeholder="Worker phone" />
+        <input id="review-employer-phone" placeholder="Employer phone" />
+        <input id="review-rating" type="number" min="1" max="5" placeholder="Rating 1-5" />
+        <textarea id="review-comment" placeholder="Review comment"></textarea>
+        <button id="review-btn" class="button primary">Submit Review</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="config.js"></script>
+<script src="volunteer.js"></script>
 </body>
 </html>
