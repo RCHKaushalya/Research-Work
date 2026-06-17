@@ -62,6 +62,8 @@ Seed the shared Supabase platform from this folder:
 .\tool\seed_viva_demo_supabase.ps1
 ```
 
+The viva seed data uses Sinhala/Tamil script values for mobile users, jobs, reviews, SMS logs, and chats. It also rewrites older English demo rows such as `Build a house` and `Test Job` when they exist.
+
 Main demo details:
 
 - Admin Portal PIN: `9421`
